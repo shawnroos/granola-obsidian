@@ -404,26 +404,72 @@ $FORMATTED_NOTES"
     TEMP_FILE=$(mktemp /tmp/granola_daily_note.XXXXXX)
     
     # Try to extract meeting time from the date line
-    MEETING_TIME=$(echo "$DATE_LINE" | grep -E -o '[0-9]{1,2}:[0-9]{2}(\s*[AP]M)?|[0-9]{1,2}(\s*[AP]M)?' | head -n 1)
+    # Look for time patterns like "10:30 AM" or "2pm"
+    if [[ "$DATE_LINE" =~ at[[:space:]]+([0-9]{1,2}:[0-9]{2}[[:space:]]*[AP]M) ]]; then
+        MEETING_TIME="${BASH_REMATCH[1]}"
+        echo "DEBUG: Extracted meeting time from 'at' pattern: $MEETING_TIME" >> "$LOG_FILE"
+    else
+        MEETING_TIME=$(echo "$DATE_LINE" | grep -E -o '[0-9]{1,2}:[0-9]{2}[[:space:]]*[AP]M' | head -n 1)
+        
+        # If no specific time format found, try more general pattern
+        if [ -z "$MEETING_TIME" ]; then
+            MEETING_TIME=$(echo "$DATE_LINE" | grep -E -o '[0-9]{1,2}:[0-9]{2}' | head -n 1)
+        fi
+    fi
     
-    # If no meeting time found, use the day number as fallback
+    # If no meeting time found in DATE_LINE, try the first line of the notes
+    if [ -z "$MEETING_TIME" ]; then
+        FIRST_LINE=$(echo "$NOTES" | head -n 1)
+        if [[ "$FIRST_LINE" =~ at[[:space:]]+([0-9]{1,2}:[0-9]{2}[[:space:]]*[AP]M) ]]; then
+            MEETING_TIME="${BASH_REMATCH[1]}"
+            echo "DEBUG: Extracted meeting time from first line 'at' pattern: $MEETING_TIME" >> "$LOG_FILE"
+        else
+            MEETING_TIME=$(echo "$FIRST_LINE" | grep -E -o '[0-9]{1,2}:[0-9]{2}[[:space:]]*[AP]M' | head -n 1)
+            
+            # If no specific time format found, try more general pattern
+            if [ -z "$MEETING_TIME" ]; then
+                MEETING_TIME=$(echo "$FIRST_LINE" | grep -E -o '[0-9]{1,2}:[0-9]{2}' | head -n 1)
+            fi
+        fi
+    fi
+    
+    # If still no time found, check the first few lines
+    if [ -z "$MEETING_TIME" ]; then
+        FIRST_FEW_LINES=$(echo "$NOTES" | head -n 5)
+        if [[ "$FIRST_FEW_LINES" =~ at[[:space:]]+([0-9]{1,2}:[0-9]{2}[[:space:]]*[AP]M) ]]; then
+            MEETING_TIME="${BASH_REMATCH[1]}"
+            echo "DEBUG: Extracted meeting time from first few lines 'at' pattern: $MEETING_TIME" >> "$LOG_FILE"
+        else
+            MEETING_TIME=$(echo "$FIRST_FEW_LINES" | grep -E -o '[0-9]{1,2}:[0-9]{2}[[:space:]]*[AP]M' | head -n 1)
+            
+            # If no specific time format found, try more general pattern
+            if [ -z "$MEETING_TIME" ]; then
+                MEETING_TIME=$(echo "$FIRST_FEW_LINES" | grep -E -o '[0-9]{1,2}:[0-9]{2}' | head -n 1)
+            fi
+        fi
+    fi
+    
+    # If still no time found, use the day number as fallback
     if [ -z "$MEETING_TIME" ]; then
         MEETING_TIME=$(echo "$DATE" | cut -c1-2)
         # Remove leading zero if present
         MEETING_TIME=$((10#$MEETING_TIME))
         echo "DEBUG: Extracted meeting time (fallback to day): $MEETING_TIME" >> "$LOG_FILE"
+        # Format the meeting link with a generic time indicator
+        MEETING_LINK="- 📅 [[Granola/The ${CLEAN_TITLE}_${DATE}|${TITLE}]]"
     else
         echo "DEBUG: Extracted meeting time: $MEETING_TIME" >> "$LOG_FILE"
+        # Format the meeting link with the actual time
+        MEETING_LINK="- ${MEETING_TIME} - [[Granola/The ${CLEAN_TITLE}_${DATE}|${TITLE}]]"
     fi
     
     # Create a nicely formatted link with time
-    MEETING_LINK="- $MEETING_TIME - [[Granola/The ${CLEAN_TITLE}_${DATE}|$TITLE]]"
+    echo "DEBUG: Adding new meeting link: $MEETING_LINK" >> "$LOG_FILE"
     
     # Check if the link already exists to avoid duplicates
     if grep -q "The ${CLEAN_TITLE}_${DATE}" "$DAILY_NOTE"; then
         echo "DEBUG: Link already exists in daily note, skipping" >> "$LOG_FILE"
     else
-        echo "DEBUG: Adding new meeting link: $MEETING_LINK" >> "$LOG_FILE"
         awk -v link="$MEETING_LINK" '
             /^# 📅 Meetings/{p=1}
             p&&/^---/{print;print link;p=0;next}

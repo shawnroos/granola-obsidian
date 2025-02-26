@@ -12,9 +12,12 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 
 ## Usage
 
-1. Copy text in Granola (⌘C)
-2. Run "Granola Notes" from Raycast
-3. Notes appear in Obsidian under Granola folder
+1. Copy a Granola meeting note to your clipboard
+2. Run the script from Raycast or terminal
+3. The script will:
+   - Create a new note in your Granola folder
+   - Add the meeting to your daily note with the correct time format
+   - Provide confirmation of successful processing
 
 ## Project Structure
 
@@ -24,16 +27,16 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 
 ## Features
 
-- Automatically extracts meeting title, date, and attendees from Granola notes
-- Creates properly formatted Obsidian markdown files with YAML front matter
-- Adds links to meetings in daily notes
-- Extracts topics from headings and bold text
-- Handles various date formats
-- Removes redundant content from notes
-- Robust fallback mechanisms for date and attendee extraction
-- Proper handling of daily note templates
-- Clean formatting with Obsidian callout boxes
-- Comprehensive error handling and debugging
+- Extracts meeting details from Granola notes
+- Creates structured Obsidian notes with front matter
+- Extracts attendees from emails and names
+- Integrates meeting notes into daily notes
+- Prevents duplicate meeting entries
+- Intelligent meeting time extraction:
+  - Detects times in various formats (10:30 AM, 2pm, etc.)
+  - Recognizes time patterns following "at" keyword
+  - Falls back to calendar emoji (📅) when no specific time is found
+- Comprehensive debug logging
 
 ## Daily Note Integration
 
