@@ -26,6 +26,7 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 
 - Extracts meeting date from various formats with fallback mechanisms
 - Identifies attendees from complex name formats and email addresses
+- Extracts meeting topics from headings and bold text
 - Creates structured Obsidian notes with proper frontmatter
 - Generates daily note entries with links to meeting notes
   - Adds timestamped links to meetings in the daily note

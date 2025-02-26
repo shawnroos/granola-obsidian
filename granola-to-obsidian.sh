@@ -198,6 +198,18 @@ if [ ${#DATE} -eq 6 ]; then
     echo "DEBUG: Extracted emails from first line:" >> "$LOG_FILE"
     echo "$EMAILS" >> "$LOG_FILE"
     
+    # Extract topics from the meeting notes
+    # Look for headings (lines starting with #) or bold text (**text**)
+    TOPICS=$(echo "$NOTES" | grep -E '^\s*#+\s+|^\s*\*\*.*\*\*$' | sed -E 's/^\s*#+\s+//g; s/^\s*\*\*//g; s/\*\*$//g' | grep -v "^$" | sort -u)
+    echo "DEBUG: Extracted topics:" >> "$LOG_FILE"
+    echo "$TOPICS" >> "$LOG_FILE"
+    
+    # Format topics for front matter
+    if [ -n "$TOPICS" ]; then
+        TOPICS_LIST=$(echo "$TOPICS" | tr '\n' ',' | sed 's/,$//')
+        echo "DEBUG: Topics list: $TOPICS_LIST" >> "$LOG_FILE"
+    fi
+    
     # If we found emails, use those as our attendees
     if [ -n "$EMAILS" ]; then
         ATTENDEES=$(echo "$EMAILS" | tr '\n' ',' | sed 's/,$//')
@@ -254,6 +266,12 @@ transcript: $TRANSCRIPT_URL"
     if [ -n "$ATTENDEES" ]; then
         FRONT_MATTER="$FRONT_MATTER
 attendees: [$ATTENDEES]"
+    fi
+    
+    # Add topics if we found some
+    if [ -n "$TOPICS_LIST" ]; then
+        FRONT_MATTER="$FRONT_MATTER
+topics: [$TOPICS_LIST]"
     fi
     
     FRONT_MATTER="$FRONT_MATTER
