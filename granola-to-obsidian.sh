@@ -275,10 +275,20 @@ attendees: [$ATTENDEES]"
 topics: [$TOPICS_LIST]"
     fi
     
+    # Format the note content
+    # Remove the title line and the first line of the body (attendees)
+    FORMATTED_NOTES=$(echo "$NOTES" | sed '1d' | sed '1d')
+    
     FRONT_MATTER="$FRONT_MATTER
 ---
 
-$NOTES"
+# $TITLE
+
+> [!INFO] Info
+> ---
+> $DATE_LINE · $BODY_FIRST_LINE
+
+$FORMATTED_NOTES"
 
     echo "$FRONT_MATTER" > "$OBSIDIAN_PATH/$FILENAME"
 
