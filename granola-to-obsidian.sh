@@ -181,7 +181,7 @@ if [ ${#DATE} -eq 6 ]; then
     echo "DEBUG: Front matter date: $FRONT_MATTER_DATE" >> "$LOG_FILE"
 
     CLEAN_TITLE=$(echo "$TITLE" | tr -cd '[:alnum:][:space:]-')
-    FILENAME="The $CLEAN_TITLE_$DATE.md"
+    FILENAME="The ${CLEAN_TITLE}_${DATE}.md"
     echo "DEBUG: Creating file: $FILENAME" >> "$LOG_FILE"
 
     # Extract transcript URL
@@ -204,9 +204,9 @@ if [ ${#DATE} -eq 6 ]; then
     echo "DEBUG: Extracted topics:" >> "$LOG_FILE"
     echo "$TOPICS" >> "$LOG_FILE"
     
-    # Format topics for front matter
+    # Format topics for front matter - remove any remaining markdown formatting
     if [ -n "$TOPICS" ]; then
-        TOPICS_LIST=$(echo "$TOPICS" | tr '\n' ',' | sed 's/,$//')
+        TOPICS_LIST=$(echo "$TOPICS" | sed -E 's/^#+\s*//g; s/^###\s*//g; s/^##\s*//g; s/^#\s*//g' | tr '\n' ',' | sed 's/,$//')
         echo "DEBUG: Topics list: $TOPICS_LIST" >> "$LOG_FILE"
     fi
     
@@ -276,8 +276,6 @@ topics: [$TOPICS_LIST]"
     
     FRONT_MATTER="$FRONT_MATTER
 ---
-
-# $TITLE
 
 $NOTES"
 
