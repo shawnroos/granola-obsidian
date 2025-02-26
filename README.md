@@ -41,6 +41,8 @@ To ensure your Raycast script stays in sync with the project version, use the sy
 ./sync-to-raycast.sh
 ```
 
+⚠️ **Important**: Always run the sync script after making any changes to the project version. This ensures that the Raycast extension has the latest features and bug fixes.
+
 This will:
 - Create a backup of the current Raycast script
 - Copy the project version to Raycast
