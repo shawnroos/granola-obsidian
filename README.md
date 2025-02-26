@@ -28,6 +28,8 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 - Identifies attendees from complex name formats and email addresses
 - Creates structured Obsidian notes with proper frontmatter
 - Generates daily note entries with links to meeting notes
+  - Adds timestamped links to meetings in the daily note
+  - Prevents duplicate entries
 - Comprehensive debug logging for troubleshooting
 
 ## Keeping Scripts in Sync
