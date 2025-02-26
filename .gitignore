@@ -27,3 +27,7 @@ venv/
 .AppleDouble
 .LSOverride
 ._*
+
+# Project specific
+backups/
+sync.log

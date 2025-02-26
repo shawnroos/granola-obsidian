@@ -16,6 +16,20 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 2. Run "Granola Notes" from Raycast
 3. Notes appear in Obsidian under Granola folder
 
+## Project Structure
+
+- `granola-to-obsidian.sh` - Main script for converting Granola notes to Obsidian
+- `sync-to-raycast.sh` - Script to sync the project version with Raycast
+- `.gitignore` - Excludes backups and logs from version control
+
+## Features
+
+- Extracts meeting date from various formats with fallback mechanisms
+- Identifies attendees from complex name formats and email addresses
+- Creates structured Obsidian notes with proper frontmatter
+- Generates daily note entries with links to meeting notes
+- Comprehensive debug logging for troubleshooting
+
 ## Keeping Scripts in Sync
 
 To ensure your Raycast script stays in sync with the project version, use the sync script:
