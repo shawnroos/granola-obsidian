@@ -189,13 +189,14 @@ if [ ${#DATE} -eq 6 ]; then
     echo "DEBUG: Transcript URL: $TRANSCRIPT_URL" >> "$LOG_FILE"
 
     # Enhanced attendees detection
-    # Granola always has attendees in the first line of the body
-    FIRST_LINE=$(echo "$NOTES" | grep -v "^$" | head -n 1)
-    echo "DEBUG: First line (attendees): $FIRST_LINE" >> "$LOG_FILE"
+    # Granola always has attendees in the first line of the body, not the title
+    # Skip the title (first line) and any blank lines, then get the first content line
+    BODY_FIRST_LINE=$(echo "$NOTES" | sed '1d' | grep -v "^$" | head -n 1)
+    echo "DEBUG: First line of body (attendees): $BODY_FIRST_LINE" >> "$LOG_FILE"
     
     # Extract email addresses - these are the most reliable indicators
-    EMAILS=$(echo "$FIRST_LINE" | grep -E -o '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | sort -u)
-    echo "DEBUG: Extracted emails from first line:" >> "$LOG_FILE"
+    EMAILS=$(echo "$BODY_FIRST_LINE" | grep -E -o '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | sort -u)
+    echo "DEBUG: Extracted emails from first line of body:" >> "$LOG_FILE"
     echo "$EMAILS" >> "$LOG_FILE"
     
     # Extract topics from the meeting notes
@@ -220,25 +221,25 @@ if [ ${#DATE} -eq 6 ]; then
         EXCLUDE_WORDS="Feature|Update|Updates|Sales|Status|Technical|Meeting|Notes|Agenda|Minutes|Discussion|Review|Planning|Sprint|Roadmap|Backlog|Standup|Retrospective|Demo|Presentation|Report|Summary|Overview|Analysis|Strategy|Implementation|Development|Design|Testing|QA|Release|Launch|Deployment|Integration|Maintenance|Support|Training|Workshop|Seminar|Conference|Webinar|Session|Call|Chat|Conversation|Briefing|Debrief|Feedback|Followup|Follow-up|Check-in|Check-out|Kickoff|Kick-off|Wrap-up|Wrapup|Closing|Opening|Introduction|Conclusion|Summary|Recap|Action|Items|Tasks|Todo|To-do|Milestone|Timeline|Schedule|Calendar|Project|Product|Service|Platform|System|Application|App|Website|Portal|Dashboard|Interface|Framework|Architecture|Infrastructure|Environment|Database|Server|Client|User|Customer|Partner|Vendor|Supplier|Provider|Stakeholder|Team|Group|Department|Division|Organization|Company|Business|Enterprise|Industry|Market|Segment|Sector|Vertical|Horizontal|Global|Local|Regional|National|International|Worldwide|Quarterly|Monthly|Weekly|Daily|Annual|Bi-weekly|Bi-monthly|Semi-annual"
         
         # Look for proper names (First Last) and exclude common meeting topics
-        NAMES=$(echo "$FIRST_LINE" | grep -E -o '[A-Z][a-z]+ [A-Z][a-z]+' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
+        NAMES=$(echo "$BODY_FIRST_LINE" | grep -E -o '[A-Z][a-z]+ [A-Z][a-z]+' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
         
         # Also look for names with middle initials or multiple capital letters (e.g., "John D. Smith" or "John McDonald")
-        NAMES_COMPLEX=$(echo "$FIRST_LINE" | grep -E -o '[A-Z][a-z]+ ([A-Z]\. )?[A-Z][a-zA-Z]+' | grep -v -E '^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
+        NAMES_COMPLEX=$(echo "$BODY_FIRST_LINE" | grep -E -o '[A-Z][a-z]+ ([A-Z]\. )?[A-Z][a-zA-Z]+' | grep -v -E '^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
         
-        echo "DEBUG: Extracted names from first line:" >> "$LOG_FILE"
+        echo "DEBUG: Extracted names from first line of body:" >> "$LOG_FILE"
         echo "$NAMES" >> "$LOG_FILE"
-        echo "DEBUG: Extracted complex names from first line:" >> "$LOG_FILE"
+        echo "DEBUG: Extracted complex names from first line of body:" >> "$LOG_FILE"
         echo "$NAMES_COMPLEX" >> "$LOG_FILE"
         
         # Combine names
         ATTENDEES=$(echo "$NAMES
 $NAMES_COMPLEX" | sort -u | tr '\n' ',' | sed 's/,$//')
         
-        echo "DEBUG: Combined attendees from first line: $ATTENDEES" >> "$LOG_FILE"
+        echo "DEBUG: Combined attendees from first line of body: $ATTENDEES" >> "$LOG_FILE"
         
         # If still no attendees found, check if there are any email-like strings in the notes
         if [ -z "$ATTENDEES" ]; then
-            echo "DEBUG: No attendees found in first line, checking for emails in entire notes" >> "$LOG_FILE"
+            echo "DEBUG: No attendees found in first line of body, checking for emails in entire notes" >> "$LOG_FILE"
             EMAILS_FALLBACK=$(echo "$NOTES" | grep -E -o '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | sort -u)
             if [ -n "$EMAILS_FALLBACK" ]; then
                 ATTENDEES=$(echo "$EMAILS_FALLBACK" | tr '\n' ',' | sed 's/,$//')
