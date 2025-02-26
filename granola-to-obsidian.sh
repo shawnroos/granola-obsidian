@@ -342,11 +342,18 @@ $FORMATTED_NOTES"
     echo "DEBUG: Adding link to daily note: $DAILY_NOTE" >> "$LOG_FILE"
     TEMP_FILE=$(mktemp)
     
-    # Format the current time for the meeting entry
-    CURRENT_TIME=$(date "+%H:%M")
+    # Try to extract meeting time from the date line
+    MEETING_TIME=$(echo "$DATE_LINE" | grep -E -o '[0-9]{1,2}:[0-9]{2}(\s*[AP]M)?|[0-9]{1,2}(\s*[AP]M)?' | head -n 1)
+    echo "DEBUG: Extracted meeting time: $MEETING_TIME" >> "$LOG_FILE"
+    
+    # If no time found, use current time
+    if [ -z "$MEETING_TIME" ]; then
+        MEETING_TIME=$(date "+%H:%M")
+        echo "DEBUG: No meeting time found, using current time: $MEETING_TIME" >> "$LOG_FILE"
+    fi
     
     # Create a nicely formatted link with time
-    MEETING_LINK="- $CURRENT_TIME - [[Granola/The ${CLEAN_TITLE}_${DATE}|$TITLE]]"
+    MEETING_LINK="- $MEETING_TIME - [[Granola/The ${CLEAN_TITLE}_${DATE}|$TITLE]]"
     
     # Check if the link already exists to avoid duplicates
     if grep -q "The ${CLEAN_TITLE}_${DATE}" "$DAILY_NOTE"; then
