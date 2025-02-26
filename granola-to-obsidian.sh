@@ -181,7 +181,7 @@ if [ ${#DATE} -eq 6 ]; then
     echo "DEBUG: Front matter date: $FRONT_MATTER_DATE" >> "$LOG_FILE"
 
     CLEAN_TITLE=$(echo "$TITLE" | tr -cd '[:alnum:][:space:]-')
-    FILENAME="The $CLEAN_TITLE _$DATE.md"
+    FILENAME="The $CLEAN_TITLE_$DATE.md"
     echo "DEBUG: Creating file: $FILENAME" >> "$LOG_FILE"
 
     # Extract transcript URL
@@ -224,7 +224,7 @@ $EMAILS" | sort -u | tr '\n' ',' | sed 's/,$//')
 
     OBSIDIAN_PATH="/Users/shawnroos/Library/Mobile Documents/iCloud~md~obsidian/Documents/Rooshub/Notes/Granola"
     DAILY_PATH="/Users/shawnroos/Library/Mobile Documents/iCloud~md~obsidian/Documents/Rooshub/Notes/Dailys"
-    TEMPLATE_PATH="/Users/shawnroos/Library/Mobile Documents/iCloud~md~obsidian/Documents/Rooshub/Notes/Templates/Daily.md"
+    TEMPLATE_PATH="/Users/shawnroos/Library/Mobile Documents/iCloud~md~obsidian/Documents/Rooshub/Templates/Daily Note.md"
 
     # Save Granola note
     mkdir -p "$OBSIDIAN_PATH"
@@ -281,13 +281,19 @@ $NOTES"
     if [ ! -f "$DAILY_NOTE" ]; then
         echo "DEBUG: Creating daily note: $DAILY_NOTE" >> "$LOG_FILE"
         cp "$TEMPLATE_PATH" "$DAILY_NOTE"
+        
+        # Add Meetings section to the new daily note
+        echo "
+# 📅 Meetings
+---" >> "$DAILY_NOTE"
+        echo "DEBUG: Added Meetings section to new daily note" >> "$LOG_FILE"
     else
         echo "DEBUG: Daily note already exists: $DAILY_NOTE" >> "$LOG_FILE"
         # Check if Meetings section exists, if not add it
-        if ! grep -q "^## Meetings" "$DAILY_NOTE"; then
+        if ! grep -q "^# 📅 Meetings" "$DAILY_NOTE"; then
             echo "DEBUG: Adding Meetings section to daily note: $DAILY_NOTE" >> "$LOG_FILE"
             echo "
-## Meetings
+# 📅 Meetings
 ---" >> "$DAILY_NOTE"
         fi
     fi
@@ -295,17 +301,32 @@ $NOTES"
     # Add link under Meetings section - look for the line after "## Meetings" and "---"
     echo "DEBUG: Adding link to daily note: $DAILY_NOTE" >> "$LOG_FILE"
     TEMP_FILE=$(mktemp)
-    awk -v link="- [[Granola/The $CLEAN_TITLE _$DATE|$TITLE]]" '
-        /^## Meetings/{p=1}
-        p&&/^---/{print;print link;p=0;next}
-        {print}
-    ' "$DAILY_NOTE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$DAILY_NOTE"
+    
+    # Format the current time for the meeting entry
+    CURRENT_TIME=$(date "+%H:%M")
+    
+    # Create a nicely formatted link with time
+    MEETING_LINK="- $CURRENT_TIME - [[Granola/The $CLEAN_TITLE_$DATE|$TITLE]]"
+    
+    # Check if the link already exists to avoid duplicates
+    if grep -q "$CLEAN_TITLE_$DATE" "$DAILY_NOTE"; then
+        echo "DEBUG: Link already exists in daily note, skipping" >> "$LOG_FILE"
+    else
+        echo "DEBUG: Adding new meeting link: $MEETING_LINK" >> "$LOG_FILE"
+        awk -v link="$MEETING_LINK" '
+            /^# 📅 Meetings/{p=1}
+            p&&/^---/{print;print link;p=0;next}
+            {print}
+        ' "$DAILY_NOTE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$DAILY_NOTE"
+    fi
 
     # Clean up temp file if it still exists
     [ -f "$TEMP_FILE" ] && rm "$TEMP_FILE"
 
     echo "DEBUG: Finished processing" >> "$LOG_FILE"
-    echo " Saved to Obsidian and added to daily note: $TITLE"
+    # Format the daily note date for the success message
+    DAILY_DATE=$(format_date "$DATE" "daily_note_header")
+    echo "✓ Saved to Obsidian and added to daily note: $DAILY_DATE"
 else
     echo "ERROR: Could not extract valid date from notes" >> "$LOG_FILE"
     exit 1
