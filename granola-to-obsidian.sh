@@ -189,50 +189,50 @@ if [ ${#DATE} -eq 6 ]; then
     echo "DEBUG: Transcript URL: $TRANSCRIPT_URL" >> "$LOG_FILE"
 
     # Enhanced attendees detection
-    # First look for lines near the date line
-    ATTENDEES_SECTION=$(echo "$NOTES" | grep -A 10 -E "^[A-Za-z]{3,}, [0-9]{1,2} [A-Za-z]{3,} [0-9]{2,4}|^[A-Za-z]{3,}, [A-Za-z]{3,} [0-9]{1,2}, [0-9]{2,4}")
-    echo "DEBUG: Attendees section:" >> "$LOG_FILE"
-    echo "$ATTENDEES_SECTION" >> "$LOG_FILE"
+    # Granola always has attendees in the first line of the body
+    FIRST_LINE=$(echo "$NOTES" | grep -v "^$" | head -n 1)
+    echo "DEBUG: First line (attendees): $FIRST_LINE" >> "$LOG_FILE"
     
-    # Common meeting topics/features to exclude from names
-    EXCLUDE_WORDS="Feature|Update|Updates|Sales|Status|Technical|Meeting|Notes|Agenda|Minutes|Discussion|Review|Planning|Sprint|Roadmap|Backlog|Standup|Retrospective|Demo|Presentation|Report|Summary|Overview|Analysis|Strategy|Implementation|Development|Design|Testing|QA|Release|Launch|Deployment|Integration|Maintenance|Support|Training|Workshop|Seminar|Conference|Webinar|Session|Call|Chat|Conversation|Briefing|Debrief|Feedback|Followup|Follow-up|Check-in|Check-out|Kickoff|Kick-off|Wrap-up|Wrapup|Closing|Opening|Introduction|Conclusion|Summary|Recap|Action|Items|Tasks|Todo|To-do|Milestone|Timeline|Schedule|Calendar|Project|Product|Service|Platform|System|Application|App|Website|Portal|Dashboard|Interface|Framework|Architecture|Infrastructure|Environment|Database|Server|Client|User|Customer|Partner|Vendor|Supplier|Provider|Stakeholder|Team|Group|Department|Division|Organization|Company|Business|Enterprise|Industry|Market|Segment|Sector|Vertical|Horizontal|Global|Local|Regional|National|International|Worldwide|Quarterly|Monthly|Weekly|Daily|Annual|Bi-weekly|Bi-monthly|Semi-annual"
-    
-    # Extract names and emails with improved patterns
-    # Look for proper names (First Last) and email addresses, excluding common meeting topics
-    NAMES=$(echo "$ATTENDEES_SECTION" | grep -E -o '[A-Z][a-z]+ [A-Z][a-z]+' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
-    
-    # Also look for names with middle initials or multiple capital letters (e.g., "John D. Smith" or "John McDonald")
-    NAMES_COMPLEX=$(echo "$ATTENDEES_SECTION" | grep -E -o '[A-Z][a-z]+ ([A-Z]\. )?[A-Z][a-zA-Z]+' | grep -v -E '^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
-    
-    # Extract email addresses - these are more reliable indicators of actual people
-    EMAILS=$(echo "$ATTENDEES_SECTION" | grep -E -o '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | sort -u)
-    
-    echo "DEBUG: Extracted names:" >> "$LOG_FILE"
-    echo "$NAMES" >> "$LOG_FILE"
-    echo "DEBUG: Extracted complex names:" >> "$LOG_FILE"
-    echo "$NAMES_COMPLEX" >> "$LOG_FILE"
-    echo "DEBUG: Extracted emails:" >> "$LOG_FILE"
+    # Extract email addresses - these are the most reliable indicators
+    EMAILS=$(echo "$FIRST_LINE" | grep -E -o '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | sort -u)
+    echo "DEBUG: Extracted emails from first line:" >> "$LOG_FILE"
     echo "$EMAILS" >> "$LOG_FILE"
     
-    # Combine names and emails
-    ATTENDEES=$(echo "$NAMES
-$NAMES_COMPLEX
-$EMAILS" | sort -u | tr '\n' ',' | sed 's/,$//')
-    
-    echo "DEBUG: Combined attendees: $ATTENDEES" >> "$LOG_FILE"
-    
-    # If no attendees found, try a broader search but still filter out common meeting topics
-    if [ -z "$ATTENDEES" ]; then
-        echo "DEBUG: No attendees found, trying broader search" >> "$LOG_FILE"
-        ATTENDEES=$(echo "$NOTES" | grep -E -o '[A-Z][a-z]+ [A-Z][a-z]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | grep -v -E "($EXCLUDE_WORDS)" | sort -u | tr '\n' ',' | sed 's/,$//')
-        echo "DEBUG: Broader search attendees: $ATTENDEES" >> "$LOG_FILE"
-    fi
-    
-    # If we only found emails, prioritize those as they're more reliable
-    if [ -z "$NAMES$NAMES_COMPLEX" ] && [ -n "$EMAILS" ]; then
-        echo "DEBUG: Only found emails, using those as attendees" >> "$LOG_FILE"
+    # If we found emails, use those as our attendees
+    if [ -n "$EMAILS" ]; then
         ATTENDEES=$(echo "$EMAILS" | tr '\n' ',' | sed 's/,$//')
-        echo "DEBUG: Email-only attendees: $ATTENDEES" >> "$LOG_FILE"
+        echo "DEBUG: Using emails as attendees: $ATTENDEES" >> "$LOG_FILE"
+    else
+        # If no emails found, try to extract names from the first line
+        # Common meeting topics/features to exclude from names
+        EXCLUDE_WORDS="Feature|Update|Updates|Sales|Status|Technical|Meeting|Notes|Agenda|Minutes|Discussion|Review|Planning|Sprint|Roadmap|Backlog|Standup|Retrospective|Demo|Presentation|Report|Summary|Overview|Analysis|Strategy|Implementation|Development|Design|Testing|QA|Release|Launch|Deployment|Integration|Maintenance|Support|Training|Workshop|Seminar|Conference|Webinar|Session|Call|Chat|Conversation|Briefing|Debrief|Feedback|Followup|Follow-up|Check-in|Check-out|Kickoff|Kick-off|Wrap-up|Wrapup|Closing|Opening|Introduction|Conclusion|Summary|Recap|Action|Items|Tasks|Todo|To-do|Milestone|Timeline|Schedule|Calendar|Project|Product|Service|Platform|System|Application|App|Website|Portal|Dashboard|Interface|Framework|Architecture|Infrastructure|Environment|Database|Server|Client|User|Customer|Partner|Vendor|Supplier|Provider|Stakeholder|Team|Group|Department|Division|Organization|Company|Business|Enterprise|Industry|Market|Segment|Sector|Vertical|Horizontal|Global|Local|Regional|National|International|Worldwide|Quarterly|Monthly|Weekly|Daily|Annual|Bi-weekly|Bi-monthly|Semi-annual"
+        
+        # Look for proper names (First Last) and exclude common meeting topics
+        NAMES=$(echo "$FIRST_LINE" | grep -E -o '[A-Z][a-z]+ [A-Z][a-z]+' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
+        
+        # Also look for names with middle initials or multiple capital letters (e.g., "John D. Smith" or "John McDonald")
+        NAMES_COMPLEX=$(echo "$FIRST_LINE" | grep -E -o '[A-Z][a-z]+ ([A-Z]\. )?[A-Z][a-zA-Z]+' | grep -v -E '^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
+        
+        echo "DEBUG: Extracted names from first line:" >> "$LOG_FILE"
+        echo "$NAMES" >> "$LOG_FILE"
+        echo "DEBUG: Extracted complex names from first line:" >> "$LOG_FILE"
+        echo "$NAMES_COMPLEX" >> "$LOG_FILE"
+        
+        # Combine names
+        ATTENDEES=$(echo "$NAMES
+$NAMES_COMPLEX" | sort -u | tr '\n' ',' | sed 's/,$//')
+        
+        echo "DEBUG: Combined attendees from first line: $ATTENDEES" >> "$LOG_FILE"
+        
+        # If still no attendees found, check if there are any email-like strings in the notes
+        if [ -z "$ATTENDEES" ]; then
+            echo "DEBUG: No attendees found in first line, checking for emails in entire notes" >> "$LOG_FILE"
+            EMAILS_FALLBACK=$(echo "$NOTES" | grep -E -o '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | sort -u)
+            if [ -n "$EMAILS_FALLBACK" ]; then
+                ATTENDEES=$(echo "$EMAILS_FALLBACK" | tr '\n' ',' | sed 's/,$//')
+                echo "DEBUG: Using emails from entire notes as fallback: $ATTENDEES" >> "$LOG_FILE"
+            fi
+        fi
     fi
 
     OBSIDIAN_PATH="/Users/shawnroos/Library/Mobile Documents/iCloud~md~obsidian/Documents/Rooshub/Notes/Granola"
