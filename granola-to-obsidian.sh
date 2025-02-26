@@ -211,40 +211,37 @@ if [ ${#DATE} -eq 6 ]; then
         echo "DEBUG: Topics list: $TOPICS_LIST" >> "$LOG_FILE"
     fi
     
-    # If we found emails, use those as our attendees
-    if [ -n "$EMAILS" ]; then
-        ATTENDEES=$(echo "$EMAILS" | tr '\n' ',' | sed 's/,$//')
-        echo "DEBUG: Using emails as attendees: $ATTENDEES" >> "$LOG_FILE"
-    else
-        # If no emails found, try to extract names from the first line
-        # Common meeting topics/features to exclude from names
-        EXCLUDE_WORDS="Feature|Update|Updates|Sales|Status|Technical|Meeting|Notes|Agenda|Minutes|Discussion|Review|Planning|Sprint|Roadmap|Backlog|Standup|Retrospective|Demo|Presentation|Report|Summary|Overview|Analysis|Strategy|Implementation|Development|Design|Testing|QA|Release|Launch|Deployment|Integration|Maintenance|Support|Training|Workshop|Seminar|Conference|Webinar|Session|Call|Chat|Conversation|Briefing|Debrief|Feedback|Followup|Follow-up|Check-in|Check-out|Kickoff|Kick-off|Wrap-up|Wrapup|Closing|Opening|Introduction|Conclusion|Summary|Recap|Action|Items|Tasks|Todo|To-do|Milestone|Timeline|Schedule|Calendar|Project|Product|Service|Platform|System|Application|App|Website|Portal|Dashboard|Interface|Framework|Architecture|Infrastructure|Environment|Database|Server|Client|User|Customer|Partner|Vendor|Supplier|Provider|Stakeholder|Team|Group|Department|Division|Organization|Company|Business|Enterprise|Industry|Market|Segment|Sector|Vertical|Horizontal|Global|Local|Regional|National|International|Worldwide|Quarterly|Monthly|Weekly|Daily|Annual|Bi-weekly|Bi-monthly|Semi-annual"
-        
-        # Look for proper names (First Last) and exclude common meeting topics
-        NAMES=$(echo "$BODY_FIRST_LINE" | grep -E -o '[A-Z][a-z]+ [A-Z][a-z]+' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
-        
-        # Also look for names with middle initials or multiple capital letters (e.g., "John D. Smith" or "John McDonald")
-        NAMES_COMPLEX=$(echo "$BODY_FIRST_LINE" | grep -E -o '[A-Z][a-z]+ ([A-Z]\. )?[A-Z][a-zA-Z]+' | grep -v -E '^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
-        
-        echo "DEBUG: Extracted names from first line of body:" >> "$LOG_FILE"
-        echo "$NAMES" >> "$LOG_FILE"
-        echo "DEBUG: Extracted complex names from first line of body:" >> "$LOG_FILE"
-        echo "$NAMES_COMPLEX" >> "$LOG_FILE"
-        
-        # Combine names
-        ATTENDEES=$(echo "$NAMES
+    # Common meeting topics/features to exclude from names
+    EXCLUDE_WORDS="Feature|Update|Updates|Sales|Status|Technical|Meeting|Notes|Agenda|Minutes|Discussion|Review|Planning|Sprint|Roadmap|Backlog|Standup|Retrospective|Demo|Presentation|Report|Summary|Overview|Analysis|Strategy|Implementation|Development|Design|Testing|QA|Release|Launch|Deployment|Integration|Maintenance|Support|Training|Workshop|Seminar|Conference|Webinar|Session|Call|Chat|Conversation|Briefing|Debrief|Feedback|Followup|Follow-up|Check-in|Check-out|Kickoff|Kick-off|Wrap-up|Wrapup|Closing|Opening|Introduction|Conclusion|Summary|Recap|Action|Items|Tasks|Todo|To-do|Milestone|Timeline|Schedule|Calendar|Project|Product|Service|Platform|System|Application|App|Website|Portal|Dashboard|Interface|Framework|Architecture|Infrastructure|Environment|Database|Server|Client|User|Customer|Partner|Vendor|Supplier|Provider|Stakeholder|Team|Group|Department|Division|Organization|Company|Business|Enterprise|Industry|Market|Segment|Sector|Vertical|Horizontal|Global|Local|Regional|National|International|Worldwide|Quarterly|Monthly|Weekly|Daily|Annual|Bi-weekly|Bi-monthly|Semi-annual"
+    
+    # Look for proper names (First Last) and exclude common meeting topics
+    NAMES=$(echo "$BODY_FIRST_LINE" | grep -E -o '[A-Z][a-z]+ [A-Z][a-z]+' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
+    
+    # Also look for names with middle initials or multiple capital letters (e.g., "John D. Smith" or "John McDonald")
+    NAMES_COMPLEX=$(echo "$BODY_FIRST_LINE" | grep -E -o '[A-Z][a-z]+ ([A-Z]\. )?[A-Z][a-zA-Z]+' | grep -v -E '^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)' | grep -v -E "($EXCLUDE_WORDS)" | sort -u)
+    
+    echo "DEBUG: Extracted names from first line of body:" >> "$LOG_FILE"
+    echo "$NAMES" >> "$LOG_FILE"
+    echo "DEBUG: Extracted complex names from first line of body:" >> "$LOG_FILE"
+    echo "$NAMES_COMPLEX" >> "$LOG_FILE"
+    
+    # Combine all attendees (emails and names)
+    ALL_ATTENDEES=$(echo "$EMAILS
+$NAMES
 $NAMES_COMPLEX" | sort -u | tr '\n' ',' | sed 's/,$//')
-        
-        echo "DEBUG: Combined attendees from first line of body: $ATTENDEES" >> "$LOG_FILE"
-        
-        # If still no attendees found, check if there are any email-like strings in the notes
-        if [ -z "$ATTENDEES" ]; then
-            echo "DEBUG: No attendees found in first line of body, checking for emails in entire notes" >> "$LOG_FILE"
-            EMAILS_FALLBACK=$(echo "$NOTES" | grep -E -o '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | sort -u)
-            if [ -n "$EMAILS_FALLBACK" ]; then
-                ATTENDEES=$(echo "$EMAILS_FALLBACK" | tr '\n' ',' | sed 's/,$//')
-                echo "DEBUG: Using emails from entire notes as fallback: $ATTENDEES" >> "$LOG_FILE"
-            fi
+    
+    echo "DEBUG: Combined all attendees (emails and names): $ALL_ATTENDEES" >> "$LOG_FILE"
+    
+    # If we have attendees, use them
+    if [ -n "$ALL_ATTENDEES" ]; then
+        ATTENDEES="$ALL_ATTENDEES"
+    else
+        # If still no attendees found, check if there are any email-like strings in the entire notes
+        echo "DEBUG: No attendees found in first line of body, checking for emails in entire notes" >> "$LOG_FILE"
+        EMAILS_FALLBACK=$(echo "$NOTES" | grep -E -o '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | sort -u)
+        if [ -n "$EMAILS_FALLBACK" ]; then
+            ATTENDEES=$(echo "$EMAILS_FALLBACK" | tr '\n' ',' | sed 's/,$//')
+            echo "DEBUG: Using emails from entire notes as fallback: $ATTENDEES" >> "$LOG_FILE"
         fi
     fi
 
@@ -286,7 +283,27 @@ topics: [$TOPICS_LIST]"
 
 > [!INFO] Info
 > ---
-> $DATE_LINE · $BODY_FIRST_LINE
+> $DATE_LINE"
+
+    # Add attendees to the callout box only if they're not already in the first line
+    if [ -n "$ATTENDEES" ] && ! echo "$BODY_FIRST_LINE" | grep -q "$ATTENDEES"; then
+        FRONT_MATTER="$FRONT_MATTER · Attendees: $ATTENDEES"
+    fi
+
+    # Skip the attendees line in the formatted notes if it contains email addresses
+    if echo "$FORMATTED_NOTES" | head -n 1 | grep -q '@'; then
+        FORMATTED_NOTES=$(echo "$FORMATTED_NOTES" | sed '1d')
+    fi
+
+    # Also skip any line that explicitly mentions "Attendees"
+    if echo "$FORMATTED_NOTES" | grep -q -i "^\*\*Attendees\*\*:"; then
+        FORMATTED_NOTES=$(echo "$FORMATTED_NOTES" | sed -E '/^\*\*Attendees\*\*:/d')
+    fi
+
+    # Remove any excessive blank lines (more than 2 consecutive blank lines)
+    FORMATTED_NOTES=$(echo "$FORMATTED_NOTES" | sed -E '/^$/N;/^\n$/D')
+
+    FRONT_MATTER="$FRONT_MATTER
 
 $FORMATTED_NOTES"
 
@@ -294,25 +311,7 @@ $FORMATTED_NOTES"
 
     # Handle daily note
     # Format date for daily note (25 February '25)
-    DAILY_NOTE_NAME="$(printf "%d %s '%s" "$((10#${DATE:0:2}))" "$(echo "$DATE_LINE" | awk '
-        BEGIN {
-            split("January February March April May June July August September October November December", months)
-            split("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec", month_abbrev)
-            for (i=1; i<=12; i++) {
-                month_long[tolower(month_abbrev[i])] = months[i]
-                month_long[tolower(months[i])] = months[i]
-            }
-        }
-        {
-            for (i=1; i<=NF; i++) {
-                gsub(/[,'']/, "", $i)
-                if (tolower($i) in month_long) {
-                    print month_long[tolower($i)]
-                    exit
-                }
-            }
-        }
-    ')" "${DATE:4:2}").md"
+    DAILY_NOTE_NAME="$(format_date "$DATE" "daily_note_file")"
 
     echo "DEBUG: Daily note name: $DAILY_NOTE_NAME" >> "$LOG_FILE"
     DAILY_NOTE="$DAILY_PATH/$DAILY_NOTE_NAME"
@@ -320,13 +319,30 @@ $FORMATTED_NOTES"
     # Create daily note if it doesn't exist
     if [ ! -f "$DAILY_NOTE" ]; then
         echo "DEBUG: Creating daily note: $DAILY_NOTE" >> "$LOG_FILE"
-        cp "$TEMPLATE_PATH" "$DAILY_NOTE"
         
-        # Add Meetings section to the new daily note
-        echo "
+        # Copy template and replace date placeholders
+        if [ -f "$TEMPLATE_PATH" ]; then
+            # Get formatted date for the header (e.g., "Tuesday, February 25")
+            FORMATTED_DATE=$(format_date "$DATE" "daily_note_header")
+            
+            # Copy template and replace date placeholder
+            cat "$TEMPLATE_PATH" | sed "s/{{date:dddd, MMMM D}}/$FORMATTED_DATE/g" > "$DAILY_NOTE"
+            
+            echo "DEBUG: Added Meetings section to new daily note" >> "$LOG_FILE"
+        else
+            # Create a basic daily note if template doesn't exist
+            echo "# $(format_date "$DATE" "daily_note_header")
+
+# ✅ Tasks
+---
+
+# 📝 Notes
+---
+
 # 📅 Meetings
----" >> "$DAILY_NOTE"
-        echo "DEBUG: Added Meetings section to new daily note" >> "$LOG_FILE"
+---
+" > "$DAILY_NOTE"
+        fi
     else
         echo "DEBUG: Daily note already exists: $DAILY_NOTE" >> "$LOG_FILE"
         # Check if Meetings section exists, if not add it

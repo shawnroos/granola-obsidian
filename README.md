@@ -31,6 +31,9 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 - Generates daily note entries with links to meeting notes
   - Adds timestamped links to meetings in the daily note
   - Prevents duplicate entries
+- Formats notes with Obsidian callout boxes for metadata
+- Properly handles daily note templates with date substitution
+- Removes redundant content for cleaner notes
 - Comprehensive debug logging for troubleshooting
 
 ## Keeping Scripts in Sync
