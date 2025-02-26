@@ -24,17 +24,27 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 
 ## Features
 
-- Extracts meeting date from various formats with fallback mechanisms
-- Identifies attendees from complex name formats and email addresses
-- Extracts meeting topics from headings and bold text
-- Creates structured Obsidian notes with proper frontmatter
-- Generates daily note entries with links to meeting notes
-  - Adds timestamped links to meetings in the daily note
-  - Prevents duplicate entries
-- Formats notes with Obsidian callout boxes for metadata
-- Properly handles daily note templates with date substitution
-- Removes redundant content for cleaner notes
-- Comprehensive debug logging for troubleshooting
+- Automatically extracts meeting title, date, and attendees from Granola notes
+- Creates properly formatted Obsidian markdown files with YAML front matter
+- Adds links to meetings in daily notes
+- Extracts topics from headings and bold text
+- Handles various date formats
+- Removes redundant content from notes
+- Robust fallback mechanisms for date and attendee extraction
+- Proper handling of daily note templates
+- Clean formatting with Obsidian callout boxes
+- Comprehensive error handling and debugging
+
+## Daily Note Integration
+
+The script integrates with Obsidian daily notes by:
+
+1. Creating daily notes if they don't exist
+2. Using the daily note template if available
+3. Adding a Meetings section if not present
+4. Adding links to meetings with timestamps
+5. Preventing duplicate entries
+6. Using robust fallback mechanisms for date formatting
 
 ## Keeping Scripts in Sync
 
@@ -55,10 +65,7 @@ This will:
 
 ## Debugging
 
-If you encounter issues with date extraction or other features:
-1. Check the debug log at `/tmp/granola-debug.log`
-2. The log contains detailed information about date extraction, attendee detection, and file operations
-3. Make changes to the project version first, then sync to Raycast
+If you encounter issues, check the debug log at `/tmp/granola-debug.log` for detailed information about the processing steps.
 
 ## Best Practices
 
