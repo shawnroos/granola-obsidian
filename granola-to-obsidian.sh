@@ -336,10 +336,10 @@ $NOTES"
     CURRENT_TIME=$(date "+%H:%M")
     
     # Create a nicely formatted link with time
-    MEETING_LINK="- $CURRENT_TIME - [[Granola/The $CLEAN_TITLE_$DATE|$TITLE]]"
+    MEETING_LINK="- $CURRENT_TIME - [[Granola/The ${CLEAN_TITLE}_${DATE}|$TITLE]]"
     
     # Check if the link already exists to avoid duplicates
-    if grep -q "$CLEAN_TITLE_$DATE" "$DAILY_NOTE"; then
+    if grep -q "The ${CLEAN_TITLE}_${DATE}" "$DAILY_NOTE"; then
         echo "DEBUG: Link already exists in daily note, skipping" >> "$LOG_FILE"
     else
         echo "DEBUG: Adding new meeting link: $MEETING_LINK" >> "$LOG_FILE"
