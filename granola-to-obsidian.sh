@@ -310,8 +310,38 @@ $FORMATTED_NOTES"
     echo "$FRONT_MATTER" > "$OBSIDIAN_PATH/$FILENAME"
 
     # Handle daily note
-    # Format date for daily note (25 February '25)
+    echo "DEBUG: Formatting date for daily note: $DATE" >> "$LOG_FILE"
     DAILY_NOTE_NAME="$(format_date "$DATE" "daily_note_file")"
+    
+    # Fallback if format_date fails
+    if [ -z "$DAILY_NOTE_NAME" ]; then
+        echo "DEBUG: format_date failed, using fallback method" >> "$LOG_FILE"
+        
+        # Extract components manually
+        local day=$(echo "$DATE" | cut -c1-2)
+        local month_num=$(echo "$DATE" | cut -c3-4)
+        local year=$(echo "$DATE" | cut -c5-6)
+        
+        # Convert month number to name
+        local month_name
+        case "$month_num" in
+            01) month_name="January" ;;
+            02) month_name="February" ;;
+            03) month_name="March" ;;
+            04) month_name="April" ;;
+            05) month_name="May" ;;
+            06) month_name="June" ;;
+            07) month_name="July" ;;
+            08) month_name="August" ;;
+            09) month_name="September" ;;
+            10) month_name="October" ;;
+            11) month_name="November" ;;
+            12) month_name="December" ;;
+        esac
+        
+        DAILY_NOTE_NAME="$((10#$day)) $month_name '$year.md"
+        echo "DEBUG: Fallback daily note name: $DAILY_NOTE_NAME" >> "$LOG_FILE"
+    fi
 
     echo "DEBUG: Daily note name: $DAILY_NOTE_NAME" >> "$LOG_FILE"
     DAILY_NOTE="$DAILY_PATH/$DAILY_NOTE_NAME"
@@ -320,13 +350,21 @@ $FORMATTED_NOTES"
     if [ ! -f "$DAILY_NOTE" ]; then
         echo "DEBUG: Creating daily note: $DAILY_NOTE" >> "$LOG_FILE"
         
-        # Copy template and replace date placeholders
+        # Copy template and replace date placeholder
         if [ -f "$TEMPLATE_PATH" ]; then
             # Get formatted date for the header (e.g., "Tuesday, February 25")
             FORMATTED_DATE=$(format_date "$DATE" "daily_note_header")
             
             # Copy template and replace date placeholder
             cat "$TEMPLATE_PATH" | sed "s/{{date:dddd, MMMM D}}/$FORMATTED_DATE/g" > "$DAILY_NOTE"
+            
+            # Check if Meetings section exists, if not add it
+            if ! grep -q "^# 📅 Meetings" "$DAILY_NOTE"; then
+                echo "DEBUG: Adding Meetings section to daily note template" >> "$LOG_FILE"
+                echo "
+# 📅 Meetings
+---" >> "$DAILY_NOTE"
+            fi
             
             echo "DEBUG: Added Meetings section to new daily note" >> "$LOG_FILE"
         else
@@ -356,16 +394,21 @@ $FORMATTED_NOTES"
 
     # Add link under Meetings section - look for the line after "## Meetings" and "---"
     echo "DEBUG: Adding link to daily note: $DAILY_NOTE" >> "$LOG_FILE"
-    TEMP_FILE=$(mktemp)
+    
+    # Create a temporary file in /tmp instead of the Dailys folder
+    TEMP_FILE=$(mktemp /tmp/granola_daily_note.XXXXXX)
     
     # Try to extract meeting time from the date line
     MEETING_TIME=$(echo "$DATE_LINE" | grep -E -o '[0-9]{1,2}:[0-9]{2}(\s*[AP]M)?|[0-9]{1,2}(\s*[AP]M)?' | head -n 1)
-    echo "DEBUG: Extracted meeting time: $MEETING_TIME" >> "$LOG_FILE"
     
-    # If no time found, use current time
+    # If no meeting time found, use the day number as fallback
     if [ -z "$MEETING_TIME" ]; then
-        MEETING_TIME=$(date "+%H:%M")
-        echo "DEBUG: No meeting time found, using current time: $MEETING_TIME" >> "$LOG_FILE"
+        MEETING_TIME=$(echo "$DATE" | cut -c1-2)
+        # Remove leading zero if present
+        MEETING_TIME=$((10#$MEETING_TIME))
+        echo "DEBUG: Extracted meeting time (fallback to day): $MEETING_TIME" >> "$LOG_FILE"
+    else
+        echo "DEBUG: Extracted meeting time: $MEETING_TIME" >> "$LOG_FILE"
     fi
     
     # Create a nicely formatted link with time
