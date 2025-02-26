@@ -311,35 +311,40 @@ $FORMATTED_NOTES"
 
     # Handle daily note
     echo "DEBUG: Formatting date for daily note: $DATE" >> "$LOG_FILE"
+    
+    # First try to use the format_date function
     DAILY_NOTE_NAME="$(format_date "$DATE" "daily_note_file")"
     
-    # Fallback if format_date fails
+    # Fallback if format_date fails or returns empty string
     if [ -z "$DAILY_NOTE_NAME" ]; then
-        echo "DEBUG: format_date failed, using fallback method" >> "$LOG_FILE"
+        echo "DEBUG: format_date failed or returned empty, using fallback method" >> "$LOG_FILE"
         
         # Extract components manually
-        local day=$(echo "$DATE" | cut -c1-2)
-        local month_num=$(echo "$DATE" | cut -c3-4)
-        local year=$(echo "$DATE" | cut -c5-6)
+        DAY=$(echo "$DATE" | cut -c1-2)
+        MONTH_NUM=$(echo "$DATE" | cut -c3-4)
+        YEAR=$(echo "$DATE" | cut -c5-6)
+        
+        # Remove leading zeros
+        DAY=$((10#$DAY))
         
         # Convert month number to name
-        local month_name
-        case "$month_num" in
-            01) month_name="January" ;;
-            02) month_name="February" ;;
-            03) month_name="March" ;;
-            04) month_name="April" ;;
-            05) month_name="May" ;;
-            06) month_name="June" ;;
-            07) month_name="July" ;;
-            08) month_name="August" ;;
-            09) month_name="September" ;;
-            10) month_name="October" ;;
-            11) month_name="November" ;;
-            12) month_name="December" ;;
+        case "$MONTH_NUM" in
+            01) MONTH_NAME="January" ;;
+            02) MONTH_NAME="February" ;;
+            03) MONTH_NAME="March" ;;
+            04) MONTH_NAME="April" ;;
+            05) MONTH_NAME="May" ;;
+            06) MONTH_NAME="June" ;;
+            07) MONTH_NAME="July" ;;
+            08) MONTH_NAME="August" ;;
+            09) MONTH_NAME="September" ;;
+            10) MONTH_NAME="October" ;;
+            11) MONTH_NAME="November" ;;
+            12) MONTH_NAME="December" ;;
+            *) MONTH_NAME="Unknown" ;;
         esac
         
-        DAILY_NOTE_NAME="$((10#$day)) $month_name '$year.md"
+        DAILY_NOTE_NAME="${DAY} ${MONTH_NAME} '${YEAR}.md"
         echo "DEBUG: Fallback daily note name: $DAILY_NOTE_NAME" >> "$LOG_FILE"
     fi
 
