@@ -228,7 +228,7 @@ if [ ${#DATE} -eq 6 ]; then
     # Combine all attendees (emails and names)
     ALL_ATTENDEES=$(echo "$EMAILS
 $NAMES
-$NAMES_COMPLEX" | sort -u | tr '\n' ',' | sed 's/,$//')
+$NAMES_COMPLEX" | grep -v '^$' | sort -u | tr '\n' ',' | sed 's/,$//')
     
     echo "DEBUG: Combined all attendees (emails and names): $ALL_ATTENDEES" >> "$LOG_FILE"
     
@@ -262,8 +262,10 @@ transcript: $TRANSCRIPT_URL"
 
     # Only add attendees if we found some
     if [ -n "$ATTENDEES" ]; then
+        # Clean up attendees list - remove any empty entries
+        CLEAN_ATTENDEES=$(echo "$ATTENDEES" | sed 's/^,//g; s/,,/,/g')
         FRONT_MATTER="$FRONT_MATTER
-attendees: [$ATTENDEES]"
+attendees: [$CLEAN_ATTENDEES]"
     fi
     
     # Add topics if we found some
