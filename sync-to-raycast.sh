@@ -56,7 +56,9 @@ sed -i '' '/# Always use clipboard in Raycast/,/fi/c\
 NOTES=$(pbpaste)' "$TEMP_FILE"
 
 # Make sure we have the correct success message
-sed -i '' 's/echo " Saved to Obsidian/echo "✓ Saved to Obsidian/g' "$TEMP_FILE"
+sed -i '' 's/echo "✓ Saved to Obsidian/echo "Meeting summary saved to Obsidian/g' "$TEMP_FILE"
+sed -i '' 's/Failed to save meeting summary./Failed to save meeting summary./g' "$TEMP_FILE"
+sed -i '' 's/Copy meeting summary first./Copy meeting summary first./g' "$TEMP_FILE"
 
 # Compare the modified file with the current Raycast script
 if diff -q "$TEMP_FILE" "$RAYCAST_SCRIPT" >/dev/null; then

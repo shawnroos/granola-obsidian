@@ -100,6 +100,29 @@ echo "DEBUG: Raw notes:" >> "$LOG_FILE"
 echo "$NOTES" >> "$LOG_FILE"
 echo "---" >> "$LOG_FILE"
 
+# Check if the clipboard content is from Granola
+IS_GRANOLA=false
+
+# Check for Granola transcript URL pattern
+if echo "$NOTES" | grep -q 'https://notes\.granola\.ai/p/'; then
+    IS_GRANOLA=true
+    echo "DEBUG: Granola transcript URL found, content is from Granola" >> "$LOG_FILE"
+# Check for other Granola-specific patterns if URL not found
+elif echo "$NOTES" | grep -q -i 'granola'; then
+    IS_GRANOLA=true
+    echo "DEBUG: Granola keyword found in content" >> "$LOG_FILE"
+# Check for typical Granola note structure (title followed by date and attendees)
+elif echo "$NOTES" | head -n 3 | grep -q -E '^# .*|^[A-Za-z]+,?\s+[A-Za-z]+\s+[0-9]{1,2}'; then
+    IS_GRANOLA=true
+    echo "DEBUG: Content structure matches Granola format" >> "$LOG_FILE"
+fi
+
+if [ "$IS_GRANOLA" = false ]; then
+    echo "DEBUG: Content does not appear to be from Granola" >> "$LOG_FILE"
+    echo "Copy meeting summary first."
+    exit 1
+fi
+
 TITLE=$(echo "$NOTES" | head -n 1 | sed 's/^# *//')  # Remove leading # and spaces
 echo "DEBUG: Title: $TITLE" >> "$LOG_FILE"
 
@@ -485,8 +508,9 @@ $FORMATTED_NOTES"
     echo "DEBUG: Finished processing" >> "$LOG_FILE"
     # Format the daily note date for the success message
     DAILY_DATE=$(format_date "$DATE" "daily_note_header")
-    echo "✓ Saved to Obsidian and added to daily note: $DAILY_DATE"
+    echo "Meeting summary saved to Obsidian"
 else
-    echo "ERROR: Could not extract valid date from notes" >> "$LOG_FILE"
+    echo "DEBUG: Could not extract valid date from notes" >> "$LOG_FILE"
+    echo "Failed to save meeting summary."
     exit 1
 fi
