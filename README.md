@@ -21,7 +21,13 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 
 ## Project Structure
 
-- `granola-to-obsidian.sh` - Main script for converting Granola notes to Obsidian
+- `bin/granola-to-obsidian.sh` - Main script for converting Granola notes to Obsidian
+- `lib/` - Directory containing modular script components:
+  - `date_utils.sh` - Date formatting and extraction utilities
+  - `attendee_parser.sh` - Functions for extracting attendees and topics
+  - `note_formatter.sh` - Note formatting and content processing
+  - `obsidian_integration.sh` - Obsidian-specific operations
+- `config.sh` - Configuration settings for paths and options
 - `sync-to-raycast.sh` - Script to sync the project version with Raycast
 - `.gitignore` - Excludes backups and logs from version control
 
@@ -37,17 +43,39 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
   - Recognizes time patterns following "at" keyword
   - Falls back to calendar emoji (📅) when no specific time is found
 - Comprehensive debug logging
+- Duplicate detection:
+  - Prevents creating duplicate notes from the same meeting
+  - Checks by title and date, transcript URL, and content hash
+  - Configurable detection methods in config.sh
+- Enhanced notifications:
+  - Emoji-based status messages (✅, ❌, ⚠️, ℹ️)
+  - Special Raycast integration for better user feedback
+  - Different notification types for success, errors, and warnings
 
 ## Daily Note Integration
 
-The script integrates with Obsidian daily notes by:
+The script automatically adds a link to each meeting note in the corresponding daily note. The integration:
 
-1. Creating daily notes if they don't exist
-2. Using the daily note template if available
-3. Adding a Meetings section if not present
-4. Adding links to meetings with timestamps
-5. Preventing duplicate entries
-6. Using robust fallback mechanisms for date formatting
+- Creates the daily note if it doesn't exist
+- Adds a configurable "Meetings" section if not present
+- Inserts a link to the meeting note under the Meetings section
+- Avoids creating duplicate links
+
+You can customize the daily note integration in `config.sh`:
+
+```bash
+# Daily note settings
+DAILY_NOTE_MEETINGS_HEADING="Meetings"  # Heading to use for meetings section
+DAILY_NOTE_MEETINGS_EMOJI="📅"          # Emoji to use for meetings heading
+DAILY_NOTE_HEADING_LEVEL=2              # Heading level (1 = #, 2 = ##, 3 = ###)
+DAILY_NOTE_LINK_FORMAT="- {{EMOJI}} [[Granola/{{FILENAME}}|{{TITLE}}]]"  # Format for meeting links
+DAILY_NOTE_TIME_FORMAT="- {{TIME}} - [[Granola/{{FILENAME}}|{{TITLE}}]]"  # Format when time is available
+```
+
+This allows you to:
+- Change the heading level (e.g., `##` vs `###`)
+- Customize the heading text and emoji
+- Modify the format of meeting links
 
 ## Keeping Scripts in Sync
 
@@ -65,6 +93,21 @@ This will:
 - Copy the project version to Raycast
 - Make it executable
 - Log the changes
+
+## Code Organization
+
+The codebase has been modularized for better maintainability and extensibility:
+
+1. **Configuration Management**: All configurable parameters are stored in `config.sh`
+2. **Modular Structure**: Code is organized into logical modules in the `lib/` directory
+3. **Error Handling**: Robust error codes and handling for reliable operation
+4. **Performance Optimization**: Reduced redundancy and improved efficiency
+
+This modular approach makes it easier to:
+- Add new features
+- Fix bugs in isolated components
+- Test individual functions
+- Understand the codebase
 
 ## Debugging
 

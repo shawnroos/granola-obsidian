@@ -1,84 +1,93 @@
 #!/bin/bash
-# sync-to-raycast.sh - Keep Raycast script in sync with project version
+# Script to sync the modular project version to Raycast
 
-# Define paths
-PROJECT_SCRIPT="/Users/shawnroos/projects/Granola Scraper/granola-to-obsidian.sh"
-RAYCAST_SCRIPT="/Users/shawnroos/.raycast/scripts/granola-to-obsidian.sh"
-BACKUP_DIR="/Users/shawnroos/projects/Granola Scraper/backups"
-LOG_FILE="/Users/shawnroos/projects/Granola Scraper/sync.log"
+# Set paths
+RAYCAST_SCRIPT_PATH="$HOME/.raycast/scripts/granola-to-obsidian.sh"
+BACKUP_DIR="$(dirname "$0")/backups"
+CONFIG_FILE="$(dirname "$0")/config.sh"
+DATE_UTILS="$(dirname "$0")/lib/date_utils.sh"
+ATTENDEE_PARSER="$(dirname "$0")/lib/attendee_parser.sh"
+NOTE_FORMATTER="$(dirname "$0")/lib/note_formatter.sh"
+OBSIDIAN_INTEGRATION="$(dirname "$0")/lib/obsidian_integration.sh"
+DUPLICATE_CHECKER="$(dirname "$0")/lib/duplicate_checker.sh"
+NOTIFICATION_UTILS="$(dirname "$0")/lib/notification_utils.sh"
+MAIN_SCRIPT="$(dirname "$0")/bin/granola-to-obsidian.sh"
 
-# Create backup directory if it doesn't exist
+# Create timestamp for backup filename
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+
+# Ensure backup directory exists
 mkdir -p "$BACKUP_DIR"
 
-# Log function
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+# Create backup of current Raycast script if it exists
+if [ -f "$RAYCAST_SCRIPT_PATH" ]; then
+    BACKUP_FILE="$BACKUP_DIR/granola-to-obsidian_${TIMESTAMP}.sh.bak"
+    cp "$RAYCAST_SCRIPT_PATH" "$BACKUP_FILE"
+    echo "[$(date +"%Y-%m-%d %H:%M:%S")] Created backup of Raycast script at $BACKUP_FILE"
+fi
+
+# Start with shebang and Raycast metadata
+cat > "$RAYCAST_SCRIPT_PATH" << 'EOL'
+#!/bin/bash
+
+# @raycast.schemaVersion 1
+# @raycast.title Granola Notes
+# @raycast.mode silent
+
+EOL
+
+# Add configuration variables
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Adding configuration variables"
+grep -v "^#!/bin/bash" "$CONFIG_FILE" | grep -v "^#" | grep -v "^$" >> "$RAYCAST_SCRIPT_PATH"
+
+# Set IS_RAYCAST flag to true for the Raycast version
+sed -i '' 's/IS_RAYCAST=false/IS_RAYCAST=true/g' "$RAYCAST_SCRIPT_PATH"
+
+# Add utility functions from modules
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Adding utility functions from modules"
+
+# Debug log function
+cat >> "$RAYCAST_SCRIPT_PATH" << 'EOL'
+
+# Debug logging function
+debug_log() {
+    if [ "$ENABLE_DEBUG_LOGGING" = true ]; then
+        local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+        echo "[$timestamp] $1" >> "$LOG_FILE"
+    fi
 }
+EOL
 
-# Check if files exist
-if [ ! -f "$PROJECT_SCRIPT" ]; then
-    log "ERROR: Project script not found at $PROJECT_SCRIPT"
-    exit 1
-fi
+# Add date utilities
+grep -v "^#!/bin/bash" "$DATE_UTILS" | grep -v "^# Source the configuration file" | grep -v "SCRIPT_DIR=" | grep -v "source " | grep -v "^# Debug logging function" | grep -v "debug_log() {" | grep -v "^$" | sed '/^}/,+3d' >> "$RAYCAST_SCRIPT_PATH"
 
-if [ ! -f "$RAYCAST_SCRIPT" ]; then
-    log "ERROR: Raycast script not found at $RAYCAST_SCRIPT"
-    exit 1
-fi
+# Add attendee parser
+grep -v "^#!/bin/bash" "$ATTENDEE_PARSER" | grep -v "^# Source the configuration file" | grep -v "SCRIPT_DIR=" | grep -v "source " | grep -v "^$" >> "$RAYCAST_SCRIPT_PATH"
 
-# Create a backup of the Raycast script
-BACKUP_FILE="$BACKUP_DIR/granola-to-obsidian_$(date '+%Y%m%d_%H%M%S').sh.bak"
-cp "$RAYCAST_SCRIPT" "$BACKUP_FILE"
-log "Created backup of Raycast script at $BACKUP_FILE"
+# Add note formatter
+grep -v "^#!/bin/bash" "$NOTE_FORMATTER" | grep -v "^# Source the configuration file" | grep -v "SCRIPT_DIR=" | grep -v "source " | grep -v "^$" >> "$RAYCAST_SCRIPT_PATH"
 
-# Extract Raycast headers from the current Raycast script
-RAYCAST_HEADERS=$(grep -E "^# @raycast\." "$RAYCAST_SCRIPT")
+# Add duplicate checker
+grep -v "^#!/bin/bash" "$DUPLICATE_CHECKER" | grep -v "^# Source the configuration file" | grep -v "SCRIPT_DIR=" | grep -v "source " | grep -v "^$" >> "$RAYCAST_SCRIPT_PATH"
 
-# Create a temporary file for the new Raycast script
-TEMP_FILE=$(mktemp)
+# Add notification utils
+grep -v "^#!/bin/bash" "$NOTIFICATION_UTILS" | grep -v "^# Source the configuration file" | grep -v "SCRIPT_DIR=" | grep -v "source " | grep -v "^$" >> "$RAYCAST_SCRIPT_PATH"
 
-# Add Raycast headers to the new script
-echo "#!/bin/bash" > "$TEMP_FILE"
-echo "" >> "$TEMP_FILE"
-echo "$RAYCAST_HEADERS" >> "$TEMP_FILE"
-echo "" >> "$TEMP_FILE"
+# Add Obsidian integration
+grep -v "^#!/bin/bash" "$OBSIDIAN_INTEGRATION" | grep -v "^# Source the configuration file" | grep -v "SCRIPT_DIR=" | grep -v "source " | grep -v "^$" >> "$RAYCAST_SCRIPT_PATH"
 
-# Extract the main code from the project script (skip any functions at the top)
-# This assumes the main code starts with "# Get clipboard and save to Obsidian"
-sed -n '/# Get clipboard and save to Obsidian/,$p' "$PROJECT_SCRIPT" >> "$TEMP_FILE"
+# Add main script logic
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Adding main script logic"
+grep -v "^#!/bin/bash" "$MAIN_SCRIPT" | grep -v "^# @raycast" | grep -v "^# Source configuration and modules" | grep -v "SCRIPT_DIR=" | grep -v "source " | grep -v "^$" >> "$RAYCAST_SCRIPT_PATH"
 
-# Make sure we're using the correct emoji for Meetings section
-sed -i '' 's/## Meetings/## 📅 Meetings/g' "$TEMP_FILE"
+# Make the script executable
+chmod +x "$RAYCAST_SCRIPT_PATH"
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Made Raycast script executable"
 
-# Make sure we're using pbpaste directly (not handling piped input)
-sed -i '' 's/if \[ -t 0 \]; then/# Always use clipboard in Raycast/g' "$TEMP_FILE"
-sed -i '' '/# Always use clipboard in Raycast/,/fi/c\
-NOTES=$(pbpaste)' "$TEMP_FILE"
+# Show diff of changes
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Changes made:"
+diff -u "$BACKUP_FILE" "$RAYCAST_SCRIPT_PATH"
 
-# Make sure we have the correct success message
-sed -i '' 's/echo "✓ Saved to Obsidian/echo "Meeting summary saved to Obsidian/g' "$TEMP_FILE"
-sed -i '' 's/Failed to save meeting summary./Failed to save meeting summary./g' "$TEMP_FILE"
-sed -i '' 's/Copy meeting summary first./Copy meeting summary first./g' "$TEMP_FILE"
-
-# Compare the modified file with the current Raycast script
-if diff -q "$TEMP_FILE" "$RAYCAST_SCRIPT" >/dev/null; then
-    log "Scripts are already in sync. No changes needed."
-    rm "$TEMP_FILE"
-else
-    # Copy the modified file to Raycast
-    cp "$TEMP_FILE" "$RAYCAST_SCRIPT"
-    rm "$TEMP_FILE"
-    
-    # Make the Raycast script executable
-    chmod +x "$RAYCAST_SCRIPT"
-    log "Made Raycast script executable"
-    
-    # Show diff of what changed
-    log "Changes made:"
-    diff -u "$BACKUP_FILE" "$RAYCAST_SCRIPT" | grep -E "^[\+\-]" | tee -a "$LOG_FILE"
-    
-    log "Updated Raycast script with project version"
-fi
-
-log "Synchronization completed successfully"
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Updated Raycast script with project version"
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Synchronization completed successfully"
 echo "✅ Raycast script synchronized with project version"
