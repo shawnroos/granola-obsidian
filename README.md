@@ -19,8 +19,9 @@ For easier updates, you can use the included sync scripts:
 ## Usage
 
 1. Copy a Granola meeting note to your clipboard
-2. Run the script from Raycast or terminal
-3. The script will:
+2. Run the script from Raycast
+3. Optionally add personal notes when prompted (these will appear in a callout)
+4. The script will:
    - Create a new note in your Granola folder
    - Add the meeting to your daily note with the correct time format
    - Provide confirmation of successful processing
@@ -28,13 +29,12 @@ For easier updates, you can use the included sync scripts:
 ### Command Line Options
 
 ```
-Usage: ./granola-to-obsidian.sh [options]
+Usage: ./granola-to-obsidian.sh [options] [personal_notes]
 Options:
   -h, --help              Show this help message
   -d, --debug             Enable debug logging
   -r, --raycast           Running from Raycast (affects output format)
   -n, --no-notifications  Disable notifications
-  -f, --file <file>       Process specific file instead of clipboard
   -t, --title <title>     Specify note title (overrides automatic detection)
   -D, --date <date>       Specify note date (overrides automatic detection)
   --no-daily              Don't update daily note
@@ -79,6 +79,25 @@ Options:
   - Emoji-based status messages (✅, ❌, ⚠️, ℹ️)
   - Integration with Raycast for better user experience
   - Sound options for success and error notifications
+- Simplified input handling:
+  - Always reads meeting notes from clipboard
+  - Accepts personal notes as an optional argument
+  - Adds personal notes in a separate callout
+
+## Input Handling
+
+The script has been designed with a streamlined input approach:
+
+1. **Meeting Notes**: Always read from clipboard
+   - Simplifies the user experience
+   - Avoids issues with long content in command arguments
+   - Handles special characters and formatting better
+
+2. **Personal Notes**: Provided as an optional argument
+   - Added to the note in a dedicated callout
+   - Preserves line breaks and formatting
+
+This approach ensures consistent behavior across different usage scenarios and provides a more reliable experience.
 
 ## Configuration
 

@@ -18,8 +18,7 @@
 # @raycast.author Shawn Roos
 
 # Inputs:
-# @raycast.argument1 { "type": "text", "name": "notes", "placeholder": "Paste meeting notes here (or leave empty to use clipboard)", "optional": true }
-# @raycast.argument2 { "type": "text", "name": "personal_notes", "placeholder": "Add personal notes (will appear in a callout)", "optional": true }
+# @raycast.argument1 { "type": "text", "name": "personal_notes", "placeholder": "Add personal notes (will appear in a callout)", "optional": true }
 
 # This is a wrapper script that calls the main granola-to-obsidian.sh with debug mode enabled
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
