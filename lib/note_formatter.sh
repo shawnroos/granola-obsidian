@@ -93,8 +93,23 @@ clean_title_for_filename() {
         fi
     fi
     
+    # Limit the title length to prevent excessively long filenames
+    # Extract just the first part of the title (up to the first punctuation or 50 chars)
+    local short_title
+    if [[ "$title" =~ ^([^.:,;]+) ]]; then
+        short_title="${BASH_REMATCH[1]}"
+    else
+        short_title="${title:0:50}"
+    fi
+    
+    # Truncate to a maximum of 50 characters
+    if [ ${#short_title} -gt 50 ]; then
+        short_title="${short_title:0:50}"
+        debug_log "Title truncated to 50 characters: $short_title"
+    fi
+    
     # Remove any special characters that aren't allowed in filenames
-    local clean_title=$(echo "$title" | sed 's/[^a-zA-Z0-9 ]/_/g' | sed 's/__*/_/g' | sed 's/^_//' | sed 's/_$//')
+    local clean_title=$(echo "$short_title" | sed 's/[^a-zA-Z0-9 ]/_/g' | sed 's/__*/_/g' | sed 's/^_//' | sed 's/_$//')
     
     # Replace spaces with underscores
     clean_title=$(echo "$clean_title" | sed 's/ /_/g')
