@@ -220,6 +220,24 @@ create_front_matter() {
     # Clean up the title again to ensure no hash symbols
     display_title=$(echo "$display_title" | sed 's/^#*[[:space:]]*//' | sed 's/[[:space:]]*$//')
     
+    # Limit the title length to prevent excessively long front matter titles
+    # Extract just the first part of the title (up to the first punctuation or 100 chars)
+    local short_title
+    if [[ "$display_title" =~ ^([^.:,;]+) ]]; then
+        short_title="${BASH_REMATCH[1]}"
+    else
+        short_title="${display_title:0:100}"
+    fi
+    
+    # Truncate to a maximum of 100 characters for front matter (can be longer than filename)
+    if [ ${#short_title} -gt 100 ]; then
+        short_title="${short_title:0:100}"
+        debug_log "Front matter title truncated to 100 characters: $short_title"
+    fi
+    
+    # Use the shortened title for front matter
+    display_title="$short_title"
+    
     # Start with basic front matter
     local front_matter="---
 title: \"$display_title\"
