@@ -76,14 +76,28 @@ extract_topics() {
     local text="$1"
     local topics_list=""
     
-    # Look for headings (lines starting with #) or bold text (**text**)
-    local topics=$(echo "$text" | grep -E '^\s*#+\s+|^\s*\*\*.*\*\*$' | sed -E 's/^\s*#+\s+//g; s/^\s*\*\*//g; s/\*\*$//g' | grep -v "^$" | sort -u)
+    # Look for main headings (lines starting with # or ##) or meeting title
+    # Exclude lower-level headings (###, ####, etc.) which are often section headers
+    local topics=$(echo "$text" | grep -E '^\s*#{1,2}\s+' | sed -E 's/^\s*#+\s+//g' | grep -v "^$" | head -n 5)
+    
+    # If no main headings, try to extract from the first line (likely the title)
+    if [ -z "$topics" ]; then
+        topics=$(echo "$text" | grep -v '^$' | head -n 1)
+        # Extract just the main part of the title (before any punctuation)
+        if [[ "$topics" =~ ^([^.:,;]+) ]]; then
+            topics="${BASH_REMATCH[1]}"
+        fi
+    fi
+    
     debug_log "Extracted topics:"
     debug_log "$topics"
     
     # Format topics for front matter - remove any remaining markdown formatting
+    # and limit to a reasonable number of topics (max 5)
     if [ -n "$topics" ]; then
-        topics_list=$(echo "$topics" | sed -E 's/^#+\s*//g; s/^###\s*//g; s/^##\s*//g; s/^#\s*//g' | tr '\n' ',' | sed 's/,$//')
+        # Clean up topics and limit length
+        topics=$(echo "$topics" | sed -E 's/^#+\s*//g' | head -n 5 | awk '{if(length($0)>50) print substr($0,1,50); else print $0}')
+        topics_list=$(echo "$topics" | tr '\n' ',' | sed 's/,$//')
         debug_log "Topics list: $topics_list"
     fi
     
