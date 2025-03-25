@@ -38,17 +38,28 @@ source "$PROJECT_ROOT/lib/obsidian_integration.sh"
 if [[ "$IS_RAYCAST" != "true" ]]; then
     # Show help message
     show_help() {
-        echo "Usage: $(basename "$0") [OPTIONS] [NOTES]"
-        echo "Process meeting notes from Granola and save to Obsidian."
-        echo ""
+        echo "Usage: $0 [options] [personal_notes]"
         echo "Options:"
-        echo "  -h, --help                  Show this help message and exit"
-        echo "  -d, --debug                 Enable debug mode"
-        echo "  -f, --force                 Force save even if duplicate is detected"
-        echo "  -n, --notes TEXT            Meeting notes content"
-        echo "  -p, --personal-notes TEXT   Personal notes to add as a callout"
+        echo "  -h, --help              Show this help message"
+        echo "  -d, --debug             Enable debug logging"
+        echo "  -r, --raycast           Running from Raycast (affects output format)"
+        echo "  -n, --no-notifications  Disable notifications"
+        echo "  -t, --title <title>     Specify note title (overrides automatic detection)"
+        echo "  -D, --date <date>       Specify note date (overrides automatic detection)"
+        echo "  --no-daily              Don't update daily note"
+        echo "  --no-duplicate-check    Don't check for duplicates"
+        echo "  --no-open               Don't open note in Obsidian after creation"
+        echo "  --no-personal-in-daily  Don't include personal notes in daily note"
+        echo "  --personal-in-daily     Include personal notes in daily note (default)"
         echo ""
-        echo "If NOTES is not provided via arguments, the script will try to read from stdin or clipboard."
+        echo "Notes:"
+        echo "  - Meeting notes are always read from clipboard"
+        echo "  - Personal notes can be provided as an argument and will appear in a callout"
+        echo ""
+        echo "Examples:"
+        echo "  $0                      # Process notes from clipboard"
+        echo "  $0 \"My personal notes\"  # Process notes from clipboard and add personal notes"
+        echo "  $0 -d                   # Process notes with debug logging enabled"
         exit 0
     }
 
@@ -83,6 +94,14 @@ if [[ "$IS_RAYCAST" != "true" ]]; then
                     echo "Error: --personal-notes requires an argument."
                     exit 1
                 fi
+                ;;
+            --no-personal-in-daily)
+                INCLUDE_PERSONAL_NOTES_IN_DAILY="false"
+                shift
+                ;;
+            --personal-in-daily)
+                INCLUDE_PERSONAL_NOTES_IN_DAILY="true"
+                shift
                 ;;
             *)
                 # If no explicit option is given, assume it's the notes content
@@ -333,7 +352,12 @@ log_debug_to_raycast "Note hash stored for duplicate detection"
 
 # Update daily note if configured
 if [ "$UPDATE_DAILY_NOTE" = true ]; then
-    if ! update_daily_note "$DATE" "$TITLE" "$FILENAME" "$MEETING_TIME"; then
+    if [ "$INCLUDE_PERSONAL_NOTES_IN_DAILY" = true ]; then
+        PERSONAL_NOTES_FOR_DAILY="$PERSONAL_NOTES_ARG"
+    else
+        PERSONAL_NOTES_FOR_DAILY=""
+    fi
+    if ! update_daily_note "$DATE" "$TITLE" "$FILENAME" "$MEETING_TIME" "$PERSONAL_NOTES_FOR_DAILY"; then
         log_debug_to_raycast "ERROR: Failed to update daily note"
         handle_error $ERROR_DAILY_NOTE_UPDATE_FAILED
     fi

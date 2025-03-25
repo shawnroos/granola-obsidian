@@ -31,12 +31,13 @@ save_note() {
 }
 
 # Create or update daily note
-# Usage: update_daily_note "date" "title" "filename" "meeting_time"
+# Usage: update_daily_note "date" "title" "filename" "meeting_time" "personal_notes"
 update_daily_note() {
     local date="$1"
     local title="$2"
     local filename="$3"
     local meeting_time="$4"
+    local personal_notes="$5"
     
     debug_log "Formatting date for daily note: $date"
     
@@ -123,10 +124,10 @@ ${meetings_heading}
             # Create a basic daily note if template doesn't exist
             echo "# $(format_date "$date" "daily_note_header")
 
-${heading_prefix} ✅ Tasks
+${heading_prefix} Tasks
 ---
 
-${heading_prefix} 📝 Notes
+${heading_prefix} Notes
 ---
 
 ${meetings_heading}
@@ -175,20 +176,56 @@ ${meetings_heading}
     # Try to find any meetings heading pattern
     local meetings_pattern="^${heading_prefix} .*${DAILY_NOTE_MEETINGS_HEADING}"
     
+    # Format personal notes if enabled and provided
+    local personal_notes_entry=""
+    if [ "$INCLUDE_PERSONAL_NOTES_IN_DAILY" = true ] && [ -n "$personal_notes" ]; then
+        # Replace newlines with spaces to keep it on one line
+        local formatted_personal_notes="${personal_notes//$'\n'/ }"
+        
+        # Truncate if too long (more than 100 characters)
+        if [ ${#formatted_personal_notes} -gt 100 ]; then
+            formatted_personal_notes="${formatted_personal_notes:0:97}..."
+        fi
+        
+        # Format according to the configured format
+        personal_notes_entry=$(echo "$DAILY_NOTE_PERSONAL_FORMAT" | 
+            sed "s|{{PERSONAL_NOTES}}|${formatted_personal_notes}|g")
+        
+        debug_log "Formatted personal notes for daily note: $personal_notes_entry"
+    fi
+    
     # Add link under Meetings section
-    awk -v pattern="$meetings_pattern" -v link="$meeting_link" '
-        $0 ~ pattern {p=1}
-        p && /^---/ {print; print link; p=0; next}
-        {print}
-    ' "$daily_note" > "$temp_file"
+    if [ -n "$personal_notes_entry" ]; then
+        # If we have personal notes, add both the meeting link and personal notes
+        awk -v pattern="$meetings_pattern" -v link="$meeting_link" -v notes="$personal_notes_entry" '
+            $0 ~ pattern {p=1}
+            p && /^---/ {print; print link; print notes; p=0; next}
+            {print}
+        ' "$daily_note" > "$temp_file"
+    else
+        # Otherwise just add the meeting link
+        awk -v pattern="$meetings_pattern" -v link="$meeting_link" '
+            $0 ~ pattern {p=1}
+            p && /^---/ {print; print link; p=0; next}
+            {print}
+        ' "$daily_note" > "$temp_file"
+    fi
     
     # If the link wasn't added (no meetings section found), append it to the end
     if ! grep -q "${filename}" "$temp_file"; then
         debug_log "No meetings section with separator found, adding to end of file"
-        echo "
+        if [ -n "$personal_notes_entry" ]; then
+            echo "
+${meetings_heading}
+---
+${meeting_link}
+${personal_notes_entry}" >> "$temp_file"
+        else
+            echo "
 ${meetings_heading}
 ---
 ${meeting_link}" >> "$temp_file"
+        fi
     fi
     
     # Move the temp file to the daily note

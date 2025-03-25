@@ -62,6 +62,8 @@ DAILY_NOTE_MEETINGS_EMOJI="📅"          # Emoji to use for meetings heading
 DAILY_NOTE_HEADING_LEVEL=2              # Heading level (1 = #, 2 = ##, 3 = ###)
 DAILY_NOTE_LINK_FORMAT="- {{EMOJI}} [[Granola/{{FILENAME}}|{{TITLE}}]]"  # Format for meeting links
 DAILY_NOTE_TIME_FORMAT="- {{TIME}} - [[Granola/{{FILENAME}}|{{TITLE}}]]"  # Format when time is available
+INCLUDE_PERSONAL_NOTES_IN_DAILY=true    # Include personal notes in daily note
+DAILY_NOTE_PERSONAL_FORMAT="  - 📝 {{PERSONAL_NOTES}}"  # Format for personal notes in daily note
 
 #############################
 # ERROR CODES
