@@ -5,7 +5,16 @@
 # @raycast.mode silent
 
 debug_log() {
-    printf "DEBUG: %s\n" "$1" >&2
+    # Only log if debug mode is enabled via environment variable or config
+    if [ "${DEBUG_MODE:-false}" = true ] || [ "$ENABLE_DEBUG_LOGGING" = true ]; then
+        local message="$1"
+        printf "DEBUG: %s\n" "$message" >&2
+        
+        # Also log to file if specified
+        if [ -n "$LOG_FILE" ]; then
+            printf "[%s] %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$message" >> "$LOG_FILE"
+        fi
+    fi
 }
 
 # Format dates consistently

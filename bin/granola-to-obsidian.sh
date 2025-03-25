@@ -305,7 +305,7 @@ if [[ "$IS_RAYCAST" == "true" ]]; then
 fi
 
 # Format notes for Obsidian
-FORMATTED_CONTENT=$(format_notes "$NOTES" "$DATE_LINE" "$TITLE" "$ATTENDEES")
+FORMATTED_CONTENT=$(format_notes "$NOTES" "$DATE_LINE" "$TITLE" "$ATTENDEES" "$PERSONAL_NOTES_ARG")
 log_debug_to_raycast "Notes formatted for Obsidian"
 
 # Create front matter for Obsidian
@@ -318,21 +318,23 @@ FULL_CONTENT="${FRONT_MATTER}
 ${FORMATTED_CONTENT}"
 log_debug_to_raycast "Combined front matter and formatted content"
 
+# Remove the old personal notes section since it's now included in the formatted content
 # Add personal notes if provided
-if [ -n "$PERSONAL_NOTES_ARG" ]; then
-    PERSONAL_NOTES_CALLOUT="
-> [!note] Personal Notes
-> ${PERSONAL_NOTES_ARG//
-/
-> }"
-    FULL_CONTENT+="
+# if [ -n "$PERSONAL_NOTES_ARG" ]; then
+#     PERSONAL_NOTES_CALLOUT="
+# > [!note] Personal Notes
+# > ${PERSONAL_NOTES_ARG//
+# /
+# > }"
+#     FULL_CONTENT+="
+# 
+# ${PERSONAL_NOTES_CALLOUT}"
+#     log_debug_to_raycast "Added personal notes to the note"
+# fi
 
-${PERSONAL_NOTES_CALLOUT}"
-    log_debug_to_raycast "Added personal notes to the note"
-fi
-
-# Create filename
-CLEAN_TITLE=$(clean_title "$TITLE")
+# Generate filename from title
+debug_log "Generating filename from title: $TITLE"
+CLEAN_TITLE=$(clean_title_for_filename "$TITLE")
 FILENAME="${CLEAN_TITLE}.md"
 log_debug_to_raycast "Generated filename: $FILENAME"
 

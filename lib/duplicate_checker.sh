@@ -67,7 +67,7 @@ check_duplicate_by_title_date() {
     local date="$2"
     
     # Clean title for filename
-    local clean_title=$(clean_title "$title")
+    local clean_title=$(clean_title_for_filename "$title")
     local filename="${clean_title}_${date}.md"
     local full_path="$OBSIDIAN_PATH/$filename"
     

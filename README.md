@@ -10,6 +10,12 @@ cp granola-to-obsidian.sh ~/.raycast/scripts/
 chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
 ```
 
+For easier updates, you can use the included sync scripts:
+```bash
+./sync-to-raycast.sh      # Syncs the main script to Raycast
+./sync-debug-to-raycast.sh # Syncs the debug version to Raycast
+```
+
 ## Usage
 
 1. Copy a Granola meeting note to your clipboard
@@ -19,16 +25,38 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
    - Add the meeting to your daily note with the correct time format
    - Provide confirmation of successful processing
 
+### Command Line Options
+
+```
+Usage: ./granola-to-obsidian.sh [options]
+Options:
+  -h, --help              Show this help message
+  -d, --debug             Enable debug logging
+  -r, --raycast           Running from Raycast (affects output format)
+  -n, --no-notifications  Disable notifications
+  -f, --file <file>       Process specific file instead of clipboard
+  -t, --title <title>     Specify note title (overrides automatic detection)
+  -D, --date <date>       Specify note date (overrides automatic detection)
+  --no-daily              Don't update daily note
+  --no-duplicate-check    Don't check for duplicates
+  --no-open               Don't open note in Obsidian after creation
+```
+
 ## Project Structure
 
 - `bin/granola-to-obsidian.sh` - Main script for converting Granola notes to Obsidian
+- `bin/granola-debug.sh` - Debug version of the script with enhanced logging
 - `lib/` - Directory containing modular script components:
   - `date_utils.sh` - Date formatting and extraction utilities
   - `attendee_parser.sh` - Functions for extracting attendees and topics
   - `note_formatter.sh` - Note formatting and content processing
   - `obsidian_integration.sh` - Obsidian-specific operations
+  - `duplicate_checker.sh` - Duplicate detection functionality
+  - `notification_utils.sh` - Notification handling utilities
+  - `utils.sh` - Common utility functions
 - `config.sh` - Configuration settings for paths and options
 - `sync-to-raycast.sh` - Script to sync the project version with Raycast
+- `sync-debug-to-raycast.sh` - Script to sync the debug version with Raycast
 - `.gitignore` - Excludes backups and logs from version control
 
 ## Features
@@ -49,8 +77,19 @@ chmod +x ~/.raycast/scripts/granola-to-obsidian.sh
   - Configurable detection methods in config.sh
 - Enhanced notifications:
   - Emoji-based status messages (✅, ❌, ⚠️, ℹ️)
-  - Special Raycast integration for better user feedback
-  - Different notification types for success, errors, and warnings
+  - Integration with Raycast for better user experience
+  - Sound options for success and error notifications
+
+## Configuration
+
+The script can be customized through the `config.sh` file:
+
+- **Paths and Directories**: Set Obsidian vault paths
+- **Logging Configuration**: Control debug logging and log levels
+- **Formatting Options**: Customize date formats and note appearance
+- **Pattern Matching**: Configure attendee detection and exclusions
+- **Notification Settings**: Enable/disable notifications and sounds
+- **Daily Note Settings**: Customize how meetings appear in daily notes
 
 ## Daily Note Integration
 

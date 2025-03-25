@@ -10,6 +10,19 @@ extract_attendees() {
     local text="$1"
     local all_attendees=""
     
+    # Check for explicit "Attendees:" format first
+    if echo "$text" | grep -q -i "Attendees:"; then
+        debug_log "Found explicit 'Attendees:' format"
+        local attendees_line=$(echo "$text" | grep -i "Attendees:" | head -n 1)
+        local explicit_attendees=$(echo "$attendees_line" | sed -E 's/.*Attendees:[ \t]*(.+)/\1/')
+        debug_log "Extracted explicit attendees: $explicit_attendees"
+        
+        if [ -n "$explicit_attendees" ]; then
+            echo "$explicit_attendees"
+            return 0
+        fi
+    fi
+    
     # Granola always has attendees in the first line of the body, not the title
     # Skip the title (first line) and any blank lines, then get the first content line
     local body_first_line=$(echo "$text" | sed '1d' | grep -v "^$" | head -n 1)

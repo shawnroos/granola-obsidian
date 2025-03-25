@@ -16,7 +16,7 @@ TEMPLATE_PATH="/Users/shawnroos/Library/Mobile Documents/iCloud~md~obsidian/Docu
 
 # Logging settings
 LOG_FILE="/tmp/granola-debug.log"
-ENABLE_DEBUG_LOGGING=true
+ENABLE_DEBUG_LOGGING=false  # Default to false, will be enabled by debug action
 LOG_LEVEL="debug"  # Options: debug, info, warning, error
 
 #############################
@@ -31,6 +31,7 @@ DATE_FORMAT_DAILY_NOTE="D MMMM 'YY"    # Format for daily note filenames
 USE_CALLOUTS=true                      # Use Obsidian callouts for meeting info
 INCLUDE_TRANSCRIPT_URL=true            # Include transcript URL in notes
 AUTO_EXTRACT_TOPICS=true               # Automatically extract topics from headings
+INCLUDE_ATTENDEES_IN_FRONTMATTER=true  # Include attendees in front matter (prevents duplication in body)
 
 #############################
 # PATTERN MATCHING
@@ -41,10 +42,13 @@ EXCLUDE_WORDS="Feature|Update|Updates|Sales|Status|Technical|Meeting|Notes|Agend
 
 # Duplicate detection settings
 ENABLE_DUPLICATE_DETECTION=true
-HASH_STORAGE_DIR="$SCRIPT_DIR/.note_hashes"
 CHECK_TITLE_DATE=true
 CHECK_URL=true
 CHECK_CONTENT=true
+HASH_STORAGE_DIR="/tmp/granola_hashes"
+
+# Validation settings
+LENIENT_VALIDATION=true  # Allow non-standard content formats
 
 # Notification settings
 IS_RAYCAST=false  # Will be set to true in the Raycast script
