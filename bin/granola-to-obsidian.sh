@@ -162,63 +162,26 @@ if [[ "$IS_RAYCAST" == "true" ]]; then
     show_progress "10%"
 fi
 
-# Get input from clipboard or stdin
+# Get input from clipboard
 debug_log "Starting input processing"
 
-# First check if stdin has data (for piped input)
-if [ ! -t 0 ]; then
-    # Read from stdin into a variable
-    STDIN_CONTENT=$(cat -)
-    debug_log "Stdin is not a terminal, checking for piped content"
-    
-    if [ -n "$STDIN_CONTENT" ]; then
-        NOTES="$STDIN_CONTENT"
-        debug_log "Using notes from stdin (length: ${#NOTES} characters)"
-        log_debug_to_raycast "Using notes from stdin (length: ${#NOTES} characters)"
-    else
-        debug_log "Stdin was detected but is empty"
-        log_debug_to_raycast "Stdin was detected but is empty"
-    fi
-else
-    debug_log "No stdin detected (not piped)"
-    log_debug_to_raycast "No stdin detected (not piped)"
-fi
-
-# If we don't have notes from stdin, check command arguments
-if [ -z "${NOTES:-}" ] && [ -n "$NOTES_ARG" ]; then
-    NOTES="$NOTES_ARG"
-    debug_log "Using notes from command argument (length: ${#NOTES} characters)"
-    log_debug_to_raycast "Using notes from command argument (length: ${#NOTES} characters)"
-fi
-
-# If we still don't have notes, try clipboard as last resort
-if [ -z "${NOTES:-}" ]; then
-    CLIPBOARD_CONTENT=$(pbpaste)
-    
-    if [ -n "$CLIPBOARD_CONTENT" ]; then
-        NOTES="$CLIPBOARD_CONTENT"
-        debug_log "Using notes from clipboard (length: ${#NOTES} characters)"
-        log_debug_to_raycast "Using notes from clipboard (length: ${#NOTES} characters)"
-    else
-        debug_log "Clipboard is empty"
-        log_debug_to_raycast "Clipboard is empty"
-    fi
+# Use clipboard content directly
+NOTES="$NOTES_ARG"
+if [ -z "$NOTES" ]; then
+    NOTES=$(pbpaste)
+    debug_log "Using notes from clipboard (length: ${#NOTES} characters)"
 fi
 
 # Log first 100 characters of notes for debugging
 if [ -n "${NOTES:-}" ]; then
-    PREVIEW="${NOTES:0:100}"
-    debug_log "Raw notes:"
-    debug_log "$NOTES"
-    debug_log "---"
-    debug_log "First 100 characters of notes: $PREVIEW..."
-    log_debug_to_raycast "First 100 characters of notes: $PREVIEW..."
+    debug_log "First 100 chars of notes: ${NOTES:0:100}"
+else
+    debug_log "Notes is empty"
 fi
 
 # Validate input
 if [ -z "${NOTES:-}" ]; then
-    debug_log "ERROR: No input detected from any source (stdin, arguments, or clipboard)"
-    show_error "Error: No input detected. Please copy meeting notes to clipboard or pipe them to the script."
+    show_error "Error: No input detected. Please copy meeting notes to clipboard."
     exit 1
 fi
 
