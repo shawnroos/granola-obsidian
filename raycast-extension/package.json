@@ -1,0 +1,33 @@
+{
+  "name": "granola-to-obsidian",
+  "title": "Granola to Obsidian",
+  "description": "Save Granola meeting notes to Obsidian",
+  "icon": "command-icon.png",
+  "author": {
+    "name": "Shawn Roos",
+    "email": "user@example.com"
+  },
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "save-granola-notes",
+      "title": "Save Granola Notes",
+      "description": "Save Granola meeting notes to Obsidian",
+      "mode": "view"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.55.0",
+    "node-clipboardy": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "@types/react": "^18.2.17",
+    "typescript": "^5.1.6"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "publish": "ray publish"
+  }
+}

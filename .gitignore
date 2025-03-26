@@ -34,3 +34,10 @@ backups/
 # Ignore hash storage
 .note_hashes/
 sync.log
+
+# Node.js / Raycast Extension
+node_modules/
+raycast-extension/node_modules/
+raycast-extension/dist/
+.env
+*.log

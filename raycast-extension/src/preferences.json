@@ -1,0 +1,27 @@
+{
+  "required": [
+    "obsidianVaultPath",
+    "granolaFolder",
+    "dailyNotesFolder"
+  ],
+  "properties": {
+    "obsidianVaultPath": {
+      "type": "string",
+      "default": "~/Documents/Obsidian",
+      "title": "Obsidian Vault Path",
+      "description": "Path to your Obsidian vault"
+    },
+    "granolaFolder": {
+      "type": "string",
+      "default": "Meetings/Granola",
+      "title": "Granola Folder",
+      "description": "Folder within your vault where Granola notes will be saved"
+    },
+    "dailyNotesFolder": {
+      "type": "string",
+      "default": "Daily Notes",
+      "title": "Daily Notes Folder",
+      "description": "Folder within your vault where daily notes are stored"
+    }
+  }
+}
