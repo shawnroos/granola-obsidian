@@ -193,89 +193,64 @@ if ! is_granola_content "$NOTES"; then
 fi
 log_debug_to_raycast "Content passed Granola validation"
 
+# Extract information from notes
+debug_log "Extracting information from notes"
+
 # Extract title
 TITLE=$(extract_title "$NOTES")
-if [ -z "$TITLE" ]; then
-    log_debug_to_raycast "ERROR: Could not extract title from notes"
-    handle_error $ERROR_INVALID_INPUT "Could not extract title from notes"
-fi
-log_debug_to_raycast "Extracted title: $TITLE"
+debug_log "Extracted title: $TITLE"
 
 # Extract date
-DATE_LINE=$(echo "$NOTES" | grep -E -o '^[A-Za-z]+,?\s+[0-9]{1,2}\s+[A-Za-z]+\s+[0-9]{2,4}|^[A-Za-z]+,?\s+[A-Za-z]+\s+[0-9]{1,2},?\s+[0-9]{2,4}' | head -n 1)
-debug_log "Date line found: $DATE_LINE"
-log_debug_to_raycast "Date line found: $DATE_LINE"
-
-# Update progress
-if [[ "$IS_RAYCAST" == "true" ]]; then
-    show_progress "30%"
-fi
-
-# Extract date in DDMMYY format
 DATE=$(extract_date "$NOTES")
-if [ $? -ne 0 ]; then
-    log_debug_to_raycast "ERROR: Failed to extract date from notes"
-    handle_error $ERROR_DATE_EXTRACTION_FAILED
-fi
-log_debug_to_raycast "Extracted date: $DATE"
+debug_log "Extracted date: $DATE"
 
-# Format date for front matter
-FRONT_MATTER_DATE=$(format_date "$DATE" "front_matter")
-if [ $? -ne 0 ] || [ -z "$FRONT_MATTER_DATE" ]; then
-    log_debug_to_raycast "ERROR: Could not format date for front matter"
-    handle_error $ERROR_DATE_EXTRACTION_FAILED
-fi
-log_debug_to_raycast "Front matter date: $FRONT_MATTER_DATE"
+# Extract date line for inclusion in note
+DATE_LINE=$(extract_date_line "$NOTES")
+debug_log "Extracted date line: $DATE_LINE"
 
-# Extract meeting time if available
-MEETING_TIME=$(extract_meeting_time "$NOTES")
-if [ -n "$MEETING_TIME" ]; then
-    debug_log "Meeting time found: $MEETING_TIME"
-    log_debug_to_raycast "Meeting time found: $MEETING_TIME"
-else
-    debug_log "No meeting time found"
-    log_debug_to_raycast "No meeting time found"
+# Extract transcript URL if enabled
+TRANSCRIPT_URL=""
+if [ "$INCLUDE_TRANSCRIPT_URL" = true ]; then
+    TRANSCRIPT_URL=$(extract_transcript_url "$NOTES")
+    info_log "Extracted transcript URL: $TRANSCRIPT_URL"
 fi
 
 # Extract attendees
 ATTENDEES=$(extract_attendees "$NOTES")
-log_debug_to_raycast "Extracted attendees: $ATTENDEES"
+debug_log "Extracted attendees: $ATTENDEES"
 
-# Extract topics if enabled
+# Extract topics if auto-extraction is enabled
 TOPICS=""
 if [ "$AUTO_EXTRACT_TOPICS" = true ]; then
     TOPICS=$(extract_topics "$NOTES")
-    log_debug_to_raycast "Extracted topics: $TOPICS"
+    if [ -n "$TOPICS" ]; then
+        info_log "Auto-extracted topics: $TOPICS"
+    else
+        debug_log "No topics auto-extracted"
+    fi
 fi
 
-# Extract transcript URL if available
-TRANSCRIPT_URL=$(extract_transcript_url "$NOTES")
-if [ -n "$TRANSCRIPT_URL" ]; then
-    debug_log "Transcript URL found: $TRANSCRIPT_URL"
-    log_debug_to_raycast "Transcript URL found: $TRANSCRIPT_URL"
-else
-    debug_log "No transcript URL found"
-    log_debug_to_raycast "No transcript URL found"
-fi
+# Format the notes with the extracted information
+debug_log "Formatting notes"
+FORMATTED_CONTENT=$(format_notes "$NOTES" "$DATE_LINE" "$TITLE" "$ATTENDEES" "$PERSONAL_NOTES_ARG")
+log_debug_to_raycast "Formatted content"
+
+# Create front matter
+debug_log "Creating front matter"
+FRONT_MATTER=$(create_front_matter "$TITLE" "$(format_date "$DATE" "front_matter")" "$TRANSCRIPT_URL" "$ATTENDEES" "$TOPICS")
+log_debug_to_raycast "Created front matter"
+
+# Combine front matter and formatted content
+debug_log "Combining front matter and formatted content"
+FULL_CONTENT="${FRONT_MATTER}
+
+${FORMATTED_CONTENT}"
+log_debug_to_raycast "Combined front matter and formatted content"
 
 # Update progress
 if [[ "$IS_RAYCAST" == "true" ]]; then
     show_progress "60%"
 fi
-
-# Format notes for Obsidian
-FORMATTED_CONTENT=$(format_notes "$NOTES" "$DATE_LINE" "$TITLE" "$ATTENDEES" "$PERSONAL_NOTES_ARG")
-log_debug_to_raycast "Notes formatted for Obsidian"
-
-# Create front matter for Obsidian
-FRONT_MATTER=$(create_front_matter "$TITLE" "$FRONT_MATTER_DATE" "$TRANSCRIPT_URL" "$ATTENDEES" "$TOPICS")
-log_debug_to_raycast "Front matter created for Obsidian"
-
-# Combine front matter and formatted content
-FULL_CONTENT="${FRONT_MATTER}
-
-${FORMATTED_CONTENT}"
-log_debug_to_raycast "Combined front matter and formatted content"
 
 # Generate filename from title
 debug_log "Generating filename from title: $TITLE"

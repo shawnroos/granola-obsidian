@@ -10,13 +10,54 @@ debug_log() {
     # Only log if debug mode is enabled via environment variable or config
     if [ "${DEBUG_MODE:-false}" = true ] || [ "$ENABLE_DEBUG_LOGGING" = true ]; then
         local message="$1"
-        echo "DEBUG: $message" >&2
+        local level="${2:-debug}"
+        
+        # Check if we should log this level based on LOG_LEVEL setting
+        case "$LOG_LEVEL" in
+            "debug")
+                # Debug level logs everything
+                ;;
+            "info")
+                # Info level doesn't log debug messages
+                if [ "$level" = "debug" ]; then
+                    return
+                fi
+                ;;
+            "warning")
+                # Warning level only logs warnings and errors
+                if [ "$level" = "debug" ] || [ "$level" = "info" ]; then
+                    return
+                fi
+                ;;
+            "error")
+                # Error level only logs errors
+                if [ "$level" != "error" ]; then
+                    return
+                fi
+                ;;
+        esac
+        
+        # Format the log message with the level
+        echo "${level^^}: $message" >&2
         
         # Also log to file if specified
         if [ -n "$LOG_FILE" ]; then
-            printf "[%s] %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$message" >> "$LOG_FILE"
+            printf "[%s] [%s] %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "${level^^}" "$message" >> "$LOG_FILE"
         fi
     fi
+}
+
+# Helper functions for different log levels
+info_log() {
+    debug_log "$1" "info"
+}
+
+warning_log() {
+    debug_log "$1" "warning"
+}
+
+error_log() {
+    debug_log "$1" "error"
 }
 
 # Check if content is from Granola
@@ -146,6 +187,27 @@ extract_transcript_url() {
     echo "$url"
 }
 
+# Extract topics from headings in the notes
+extract_topics() {
+    local notes="$1"
+    local topics=""
+    
+    if [ "$AUTO_EXTRACT_TOPICS" = true ]; then
+        # Extract all headings (lines starting with ## or ###)
+        local headings=$(echo "$notes" | grep -E '^#{2,3} ' | sed 's/^#\{2,3\} //')
+        
+        if [ -n "$headings" ]; then
+            # Convert headings to comma-separated list
+            topics=$(echo "$headings" | tr '\n' ',' | sed 's/,$//')
+            info_log "Automatically extracted topics from headings: $topics"
+        else
+            debug_log "No headings found for topic extraction"
+        fi
+    fi
+    
+    echo "$topics"
+}
+
 # Format notes for Obsidian
 format_notes() {
     local notes="$1"
@@ -173,6 +235,18 @@ format_notes() {
     if [ -n "$attendees" ]; then
         formatted_content="${formatted_content}
 > Attendees: $attendees"
+    fi
+
+    # Add transcript URL if enabled and available
+    if [ "$INCLUDE_TRANSCRIPT_URL" = true ]; then
+        local url=$(extract_transcript_url "$notes")
+        if [ -n "$url" ]; then
+            formatted_content="${formatted_content}
+> Transcript: [$url]($url)"
+            info_log "Added transcript URL to note"
+        else
+            warning_log "No transcript URL found to include in note"
+        fi
     fi
 
     # Add personal notes callout if provided

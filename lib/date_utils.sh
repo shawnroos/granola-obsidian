@@ -7,10 +7,57 @@ source "$SCRIPT_DIR/config.sh"
 
 # Debug logging function
 debug_log() {
-    if [ "$ENABLE_DEBUG_LOGGING" = true ]; then
-        local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-        echo "[$timestamp] $1" >> "$LOG_FILE"
+    # Only log if debug mode is enabled via environment variable or config
+    if [ "${DEBUG_MODE:-false}" = true ] || [ "$ENABLE_DEBUG_LOGGING" = true ]; then
+        local message="$1"
+        local level="${2:-debug}"
+        
+        # Check if we should log this level based on LOG_LEVEL setting
+        case "$LOG_LEVEL" in
+            "debug")
+                # Debug level logs everything
+                ;;
+            "info")
+                # Info level doesn't log debug messages
+                if [ "$level" = "debug" ]; then
+                    return
+                fi
+                ;;
+            "warning")
+                # Warning level only logs warnings and errors
+                if [ "$level" = "debug" ] || [ "$level" = "info" ]; then
+                    return
+                fi
+                ;;
+            "error")
+                # Error level only logs errors
+                if [ "$level" != "error" ]; then
+                    return
+                fi
+                ;;
+        esac
+        
+        # Format the log message with the level
+        echo "${level^^}: $message" >&2
+        
+        # Also log to file if specified
+        if [ -n "$LOG_FILE" ]; then
+            printf "[%s] [%s] %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "${level^^}" "$message" >> "$LOG_FILE"
+        fi
     fi
+}
+
+# Helper functions for different log levels
+info_log() {
+    debug_log "$1" "info"
+}
+
+warning_log() {
+    debug_log "$1" "warning"
+}
+
+error_log() {
+    debug_log "$1" "error"
 }
 
 # Format date according to the specified format type
@@ -156,6 +203,26 @@ extract_date() {
     
     debug_log "Failed to extract date"
     return $ERROR_DATE_EXTRACTION_FAILED
+}
+
+# Extract the date line from text (for display in notes)
+extract_date_line() {
+    local text="$1"
+    
+    # Try to find a date line first
+    local date_line=$(echo "$text" | grep -E -o '^[A-Za-z]+,?\s+[0-9]{1,2}\s+[A-Za-z]+\s+[0-9]{2,4}|^[A-Za-z]+,?\s+[A-Za-z]+\s+[0-9]{1,2},?\s+[0-9]{2,4}' | head -n 1)
+    
+    if [ -n "$date_line" ]; then
+        debug_log "Found date line: $date_line"
+        echo "$date_line"
+        return 0
+    else
+        # If no date line found, format today's date in a readable format
+        debug_log "No date line found, using today's date"
+        local today=$(date "+%A, %B %d %Y")
+        echo "$today"
+        return 0
+    fi
 }
 
 # Extract time from text
