@@ -18,8 +18,7 @@
 # @raycast.author Shawn Roos
 
 # Inputs:
-# @raycast.argument1 { "type": "text", "name": "notes", "placeholder": "Paste meeting notes here (or leave empty to use clipboard)", "optional": true }
-# @raycast.argument2 { "type": "text", "name": "personal_notes", "placeholder": "Add personal notes (will appear in a callout)", "optional": true }
+# @raycast.argument1 { "type": "text", "name": "personal_notes", "placeholder": "Add personal notes (will appear in a callout)", "optional": true }
 
 # Get the script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -77,15 +76,6 @@ if [[ "$IS_RAYCAST" != "true" ]]; then
                 FORCE_SAVE="true"
                 shift
                 ;;
-            -n|--notes)
-                if [ -n "$2" ]; then
-                    NOTES_ARG="$2"
-                    shift 2
-                else
-                    echo "Error: --notes requires an argument."
-                    exit 1
-                fi
-                ;;
             -p|--personal-notes)
                 if [ -n "$2" ]; then
                     PERSONAL_NOTES_ARG="$2"
@@ -104,9 +94,9 @@ if [[ "$IS_RAYCAST" != "true" ]]; then
                 shift
                 ;;
             *)
-                # If no explicit option is given, assume it's the notes content
-                if [ -z "$NOTES_ARG" ]; then
-                    NOTES_ARG="$1"
+                # If no explicit option is given, assume it's the personal notes
+                if [ -z "$PERSONAL_NOTES_ARG" ]; then
+                    PERSONAL_NOTES_ARG="$1"
                 fi
                 shift
                 ;;
@@ -114,18 +104,9 @@ if [[ "$IS_RAYCAST" != "true" ]]; then
     done
 else
     # In Raycast mode, get arguments from Raycast
-    NOTES_ARG="$1"
-    PERSONAL_NOTES_ARG="$2"
+    PERSONAL_NOTES_ARG="$1"
     
     # Log input source in Raycast mode
-    if [ -n "$NOTES_ARG" ]; then
-        debug_log "Using notes from Raycast argument (length: ${#NOTES_ARG})"
-    else
-        debug_log "No notes provided via Raycast argument, using clipboard"
-        NOTES_ARG=$(pbpaste)
-        debug_log "Clipboard content length: ${#NOTES_ARG}"
-    fi
-    
     if [ -n "$PERSONAL_NOTES_ARG" ]; then
         debug_log "Using personal notes from Raycast argument (length: ${#PERSONAL_NOTES_ARG})"
     fi
@@ -142,7 +123,6 @@ fi
 debug_log "Configuration settings:"
 debug_log "  FORCE_SAVE: $FORCE_SAVE"
 debug_log "  DEBUG_MODE: $DEBUG_MODE"
-debug_log "  NOTES_ARG: ${NOTES_ARG:0:20}..."
 debug_log "  PERSONAL_NOTES_ARG: ${PERSONAL_NOTES_ARG:0:20}..."
 
 # Error handling function
@@ -185,11 +165,8 @@ fi
 debug_log "Starting input processing"
 
 # Use clipboard content directly
-NOTES="$NOTES_ARG"
-if [ -z "$NOTES" ]; then
-    NOTES=$(pbpaste)
-    debug_log "Using notes from clipboard (length: ${#NOTES} characters)"
-fi
+NOTES=$(pbpaste)
+debug_log "Using notes from clipboard (length: ${#NOTES} characters)"
 
 # Log first 100 characters of notes for debugging
 if [ -n "${NOTES:-}" ]; then
@@ -299,20 +276,6 @@ FULL_CONTENT="${FRONT_MATTER}
 
 ${FORMATTED_CONTENT}"
 log_debug_to_raycast "Combined front matter and formatted content"
-
-# Remove the old personal notes section since it's now included in the formatted content
-# Add personal notes if provided
-# if [ -n "$PERSONAL_NOTES_ARG" ]; then
-#     PERSONAL_NOTES_CALLOUT="
-# > [!note] Personal Notes
-# > ${PERSONAL_NOTES_ARG//
-# /
-# > }"
-#     FULL_CONTENT+="
-# 
-# ${PERSONAL_NOTES_CALLOUT}"
-#     log_debug_to_raycast "Added personal notes to the note"
-# fi
 
 # Generate filename from title
 debug_log "Generating filename from title: $TITLE"
