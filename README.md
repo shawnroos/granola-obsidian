@@ -110,6 +110,47 @@ The script can be customized through the `config.sh` file:
 - **Notification Settings**: Enable/disable notifications and sounds
 - **Daily Note Settings**: Customize how meetings appear in daily notes
 
+### Key Configuration Options
+
+```bash
+# Logging configuration
+ENABLE_DEBUG_LOGGING=false  # Enable or disable debug logging
+LOG_LEVEL="debug"           # Options: debug, info, warning, error
+
+# Note format options
+USE_CALLOUTS=true                      # Use Obsidian callouts for meeting info
+INCLUDE_TRANSCRIPT_URL=true            # Include transcript URL in notes
+AUTO_EXTRACT_TOPICS=true               # Automatically extract topics from headings
+INCLUDE_ATTENDEES_IN_FRONTMATTER=true  # Include attendees in front matter
+
+# Validation settings
+LENIENT_VALIDATION=true  # Allow non-standard content formats
+
+# Daily note settings
+INCLUDE_PERSONAL_NOTES_IN_DAILY=true    # Include personal notes in daily note
+DAILY_NOTE_PERSONAL_FORMAT="  - 📝 {{PERSONAL_NOTES}}"  # Format for personal notes
+```
+
+#### Log Levels
+
+The script supports four log levels:
+- **debug**: Most verbose, logs everything
+- **info**: Logs informational messages, warnings, and errors
+- **warning**: Logs only warnings and errors
+- **error**: Logs only errors
+
+#### Auto-Extract Topics
+
+When `AUTO_EXTRACT_TOPICS` is enabled, the script automatically extracts topics from level 2 and 3 headings (## and ###) in your meeting notes and adds them to the front matter. This makes it easier to organize and find related meetings.
+
+#### Transcript URL
+
+When `INCLUDE_TRANSCRIPT_URL` is enabled, the script will include a link to the original Granola transcript in the meeting information callout, making it easy to access the original source.
+
+#### Personal Notes in Daily Notes
+
+The `INCLUDE_PERSONAL_NOTES_IN_DAILY` option controls whether personal notes are included in the daily note. When enabled, personal notes will appear under the meeting entry using the format specified in `DAILY_NOTE_PERSONAL_FORMAT`.
+
 ## Daily Note Integration
 
 The script automatically adds a link to each meeting note in the corresponding daily note. The integration:
