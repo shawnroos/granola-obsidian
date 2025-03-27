@@ -141,3 +141,18 @@ trim() {
     var="${var%"${var##*[![:space:]]}"}"
     echo "$var"
 }
+
+# Add Raycast-specific logging and progress functions
+log_debug_to_raycast() {
+    if [ "$IS_RAYCAST" = true ]; then
+        local message="$1"
+        echo "DEBUG: $message" >&2
+    fi
+}
+
+show_progress() {
+    if [ "$IS_RAYCAST" = true ]; then
+        local message="$1"
+        echo "PROGRESS: $message" >&2
+    fi
+}
