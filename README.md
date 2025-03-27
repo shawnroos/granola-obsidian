@@ -4,6 +4,30 @@ Save Granola meeting notes to Obsidian via Raycast.
 
 ## Setup
 
+### Interactive Installation (Recommended)
+
+The easiest way to set up Granola Scraper is to use the interactive installer:
+
+```bash
+# Clone the repository
+git clone https://github.com/shawnroos/granola-obsidian.git
+cd granola-obsidian
+
+# Run the installer
+./install.sh
+```
+
+The installer will:
+- Guide you through configuring your Obsidian paths
+- Set up logging, duplicate detection, and validation preferences
+- Configure notification settings
+- Install Raycast scripts with keyboard shortcuts
+- Create necessary directories if they don't exist
+
+### Manual Setup
+
+If you prefer to set up manually:
+
 ```bash
 mkdir -p ~/.raycast/scripts/
 cp granola-to-obsidian.sh ~/.raycast/scripts/
@@ -83,6 +107,16 @@ Options:
   - Always reads meeting notes from clipboard
   - Accepts personal notes as an optional argument
   - Adds personal notes in a separate callout
+- Lenient validation mode:
+  - Processes non-standard content formats
+  - Handles Slack URLs and other meeting note formats
+  - Provides warning notifications for non-standard content
+  - Configurable via the `LENIENT_VALIDATION` setting
+- Robust notification system:
+  - Clear visual feedback with emoji indicators
+  - Configurable sound options for different notification types
+  - Special handling for Raycast environment
+  - Consistent notification interface across the application
 
 ## Input Handling
 
